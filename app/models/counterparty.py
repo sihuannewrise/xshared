@@ -4,15 +4,11 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.models._common import EntityBase
-from app.core.models._selectchoice import (
-    CounterAgentBranch,
-    CounterAgentType,
+from ._common import EntityBase
+from ._selectchoice import (
+    CounterpartyType,
+    CounterpartyBranch,
 )
-
-if TYPE_CHECKING:
-    from ._common import CounterAgentGroup
-    from .bank_account import CaAccountMapping
 
 
 class Counterparty(EntityBase):
@@ -22,20 +18,20 @@ class Counterparty(EntityBase):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
     name: Mapped[str] = mapped_column(String(160), unique=True)
-    inn: Mapped[Optional[str]] = mapped_column(String(12), unique=True)
+    inn: Mapped[str | None] = mapped_column(String(12), unique=True)
     opf_short: Mapped[Optional[str]] = mapped_column(String(10))
     name_full_with_opf: Mapped[Optional[str]] = mapped_column(String(300))
 
-    ca_type: Mapped[Optional[CounterAgentType]] = mapped_column(String(20))
+    ca_type: Mapped[Optional[CounterpartyType]] = mapped_column(String(20))
 
     group_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey('counteragentgroup.id')
     )
-    counteragentgroup: Mapped[Optional[CounterAgentGroup]] = relationship(
+    counterpartygroup: Mapped[Optional[CounterpartyGroup]] = relationship(
         back_populates='ca_list'
     )
 
-    branch_type: Mapped[Optional[CounterAgentBranch]] = mapped_column(
+    branch_type: Mapped[Optional[CounterpartyBranch]] = mapped_column(
         String(20)
     )
 
@@ -51,17 +47,14 @@ class Counterparty(EntityBase):
     address_full: Mapped[Optional[str]] = mapped_column(String(150))
 
     kpp_list: Mapped[list["CaKppMapping"]] = relationship(
-        back_populates='ca'
+        back_populates='counterparty'
     )
     bank_accounts: Mapped[list["CaAccountMapping"]] = relationship(
-        back_populates='ca'
-    )
-    payments: Mapped[list["PaymentRequest"]] = relationship(
-        back_populates='ca'
+        back_populates='counterparty'
     )
 
     company: Mapped[Optional["Company"]] = relationship(
-        back_populates='counteragent',
+        back_populates='counterparty',
         uselist=False,
         cascade='all, delete-orphan',
     )
