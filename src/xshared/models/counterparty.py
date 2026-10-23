@@ -19,17 +19,13 @@ class Counterparty(EntityBase):
     inn: Mapped[str | None] = mapped_column(String(12), unique=True)
     opf_short: Mapped[str | None] = mapped_column(String(10))
     name_full_with_opf: Mapped[str | None] = mapped_column(String(300))
-
-    ca_type: Mapped[str | None] = mapped_column(String(20))  # код CounterpartyType
+    counterparty_type: Mapped["CounterpartyType | None"] = mapped_column(String(20))
 
     group_id: Mapped[int | None] = mapped_column(
         ForeignKey("shared.counterparty_groups.id")
     )
-    counterpartygroup: Mapped["CounterpartyGroup | None"] = relationship(
-        back_populates="ca_list"
-    )
 
-    branch_type: Mapped[str | None] = mapped_column(String(20))  # код CounterpartyBranch
+    branch_type: Mapped["CounterpartyBranch | None"] = mapped_column(String(20))
 
     ogrn: Mapped[str | None] = mapped_column(String(20))
     ogrn_date: Mapped[datetime | None]
@@ -42,10 +38,12 @@ class Counterparty(EntityBase):
     email: Mapped[str | None] = mapped_column(String(150))
     address_full: Mapped[str | None] = mapped_column(String(150))
 
-    # TODO: раскомментировать, когда появятся модели CaKppMapping / CaAccountMapping
-    # kpp_list: Mapped[list["CaKppMapping"]] = relationship(back_populates="counterparty")
-    # bank_accounts: Mapped[list["CaAccountMapping"]] = relationship(back_populates="counterparty")
-
+    kpp_list: Mapped[list["CaKppMapping"]] = relationship(
+        back_populates='ca'
+    )
+    counterpartygroup: Mapped["CounterpartyGroup | None"] = relationship(
+        back_populates="ca_list"
+    )
     company: Mapped["Company | None"] = relationship(
         back_populates="counterparty",
         uselist=False,
