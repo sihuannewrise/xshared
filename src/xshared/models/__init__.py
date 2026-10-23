@@ -9,8 +9,10 @@ from xshared.models._base_entities import (
 )
 
 from xshared.models.counterparty_group import CounterpartyGroup
+from xshared.models.kpp import KPP
 
 from xshared.models.counterparty import Counterparty
+from xshared.models.ca_kpp_mapping import CaKppMapping
 from xshared.models.company import Company
 from xshared.models.user import User
 from xshared.models.department import Department
@@ -25,6 +27,7 @@ __all__ = [
     "BaseWithPK", "EntityBase", "SupplementaryBase", "TimestampedBase",
     "CounterpartyType", "EntityStatus", "CounterpartyBranch",
     "Counterparty", "CounterpartyGroup", "Company",
+    "KPP", "CaKppMapping",
     "User", "Employee", "Department",
     "Role", "Permission", "RolePermission", "UserCompanyRole",
 ]
