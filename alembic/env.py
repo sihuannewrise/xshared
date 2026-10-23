@@ -1,5 +1,4 @@
 import asyncio
-import ssl
 from logging.config import fileConfig
 
 from sqlalchemy import pool, text
@@ -9,6 +8,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 from xshared.db import SharedBase
+from xshared.db.session import build_connect_args, build_ssl_context
 import xshared.models  # noqa: F401
 
 from xshared.config import settings
@@ -30,18 +30,6 @@ def include_object(obj, name, type_, reflected, compare_to):
     if type_ == "table" and obj.schema != "shared":
         return False
     return True
-
-
-def _connect_args() -> dict:
-    if not settings.db_ssl_enabled:
-        return {}
-    if settings.db_ssl_ca_path:
-        ssl_ctx = ssl.create_default_context(cafile=settings.db_ssl_ca_path)
-    else:
-        ssl_ctx = ssl.create_default_context()
-        ssl_ctx.check_hostname = False
-        ssl_ctx.verify_mode = ssl.CERT_NONE
-    return {"ssl": ssl_ctx}
 
 
 def run_migrations_offline() -> None:
@@ -89,7 +77,7 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        connect_args=_connect_args(),
+        connect_args=build_connect_args(),   # ← общий код
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

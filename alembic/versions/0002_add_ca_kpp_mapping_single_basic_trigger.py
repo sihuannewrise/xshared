@@ -4,14 +4,14 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "0002"
-down_revision = "0001"
-branch_labels = None
-depends_on = None
+revision: str = "0002"
+down_revision: Union[str, Sequence[str], None] = "0001"
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("""
+    op.execute(sa.text("""
         CREATE OR REPLACE FUNCTION shared.fn_ca_kpp_mapping_single_basic()
         RETURNS TRIGGER
         LANGUAGE plpgsql
@@ -31,23 +31,41 @@ def upgrade() -> None:
             RETURN NEW;
         END;
         $$;
-    """)
+    """))
 
-    op.execute("""
+    op.execute(sa.text("""
+        DROP TRIGGER IF EXISTS trg_ca_kpp_mapping_single_basic
+        ON shared.ca_kpp_mappings;
+    """))
+    op.execute(sa.text("""
         CREATE TRIGGER trg_ca_kpp_mapping_single_basic
         BEFORE INSERT OR UPDATE OF is_basic, counterparty_id
         ON shared.ca_kpp_mappings
         FOR EACH ROW
         WHEN (NEW.is_basic IS TRUE)
         EXECUTE FUNCTION shared.fn_ca_kpp_mapping_single_basic();
-    """)
+    """))
+
+    op.create_index(
+        "uq_ca_kpp_mapping_basic",
+        "ca_kpp_mappings",
+        ["counterparty_id"],
+        unique=True,
+        postgresql_where=sa.text("is_basic = true"),
+        schema="shared",
+    )
 
 
 def downgrade() -> None:
-    op.execute("""
+    op.drop_index(
+        "uq_ca_kpp_mapping_basic",
+        table_name="ca_kpp_mappings",
+        schema="shared",
+    )
+    op.execute(sa.text("""
         DROP TRIGGER IF EXISTS trg_ca_kpp_mapping_single_basic
         ON shared.ca_kpp_mappings;
-    """)
-    op.execute("""
+    """))
+    op.execute(sa.text("""
         DROP FUNCTION IF EXISTS shared.fn_ca_kpp_mapping_single_basic();
-    """)
+    """))
