@@ -1,6 +1,7 @@
 import ssl
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -26,7 +27,7 @@ def build_ssl_context() -> ssl.SSLContext | None:
     return ctx
 
 
-def build_connect_args() -> dict:
+def build_connect_args() -> dict[str, Any]:
     """connect_args для create_async_engine / async_engine_from_config."""
     ssl_ctx = build_ssl_context()
     return {"ssl": ssl_ctx} if ssl_ctx is not None else {}
@@ -68,7 +69,7 @@ SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
 
 
 @asynccontextmanager
-async def session_scope() -> AsyncGenerator[AsyncSession]:
+async def session_scope() -> AsyncGenerator[AsyncSession, None]:
     """
     Контекстный менеджер для скриптов, фоновых задач и тестов.
 
