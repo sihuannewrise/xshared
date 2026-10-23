@@ -1,4 +1,3 @@
-# shared/models/employee.py
 from datetime import date, datetime
 from sqlalchemy import (
     String, Boolean, Date, ForeignKey, ForeignKeyConstraint,

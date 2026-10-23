@@ -1,8 +1,7 @@
-# shared/models/user.py
 from datetime import datetime
-from sqlalchemy import String, Boolean, func, UniqueConstraint
+from sqlalchemy import String, Boolean, func, UniqueConstraint, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from shared.models.base import SharedBase
+from app.models.base import SharedBase
 
 
 class User(SharedBase):
@@ -30,20 +29,6 @@ class User(SharedBase):
         server_default=func.now(), onupdate=func.now()
     )
 
-    # Обратная связь (опционально)
     employee: Mapped["Employee | None"] = relationship(
         back_populates="user", uselist=False
     )
-
-
-class UserCompanyRole(SharedBase):
-    __tablename__ = "user_company_roles"
-    __table_args__ = (
-        UniqueConstraint("user_id", "company_id", name="uq_user_company_role"),
-        {"schema": "shared"},
-    )
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("shared.users.id"))
-    company_id: Mapped[int] = mapped_column(ForeignKey("shared.companies.id"))
-    role_id: Mapped[int] = mapped_column(ForeignKey("shared.roles.id"))
