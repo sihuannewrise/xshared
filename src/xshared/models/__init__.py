@@ -5,13 +5,15 @@ from xshared.models._enums import (
 )
 from xshared.models._mixins import IdMixin, TimestampMixin
 from xshared.models._base_entities import (
-    BaseWithPK, EntityBase, SupplementaryBase,
+    BaseWithPK, EntityBase, SupplementaryBase, TimestampedBase,
 )
 
-from xshared.models.counterparty import Counterparty
 from xshared.models.counterparty_group import CounterpartyGroup
+
+from xshared.models.counterparty import Counterparty
 from xshared.models.company import Company
 from xshared.models.user import User
+from xshared.models.department import Department
 from xshared.models.employee import Employee
 from xshared.models.roles import (
     Permission, Role, RolePermission, UserCompanyRole,
@@ -20,9 +22,9 @@ from xshared.models.roles import (
 __all__ = [
     "SharedBase",
     "IdMixin", "TimestampMixin",
-    "BaseWithPK", "EntityBase", "SupplementaryBase",
+    "BaseWithPK", "EntityBase", "SupplementaryBase", "TimestampedBase",
     "CounterpartyType", "EntityStatus", "CounterpartyBranch",
-    "Counterparty", "CounterpartyGroup", "Company", "Department",
+    "Counterparty", "CounterpartyGroup", "Company",
     "User", "Employee", "Department",
     "Role", "Permission", "RolePermission", "UserCompanyRole",
 ]

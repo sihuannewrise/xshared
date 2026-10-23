@@ -1,6 +1,3 @@
-# src/xshared/models/department.py
-from __future__ import annotations
-
 from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,26 +12,21 @@ class Department(SharedBase):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-
     company_id: Mapped[int] = mapped_column(
-        ForeignKey("shared.companies.id"), index=True
+        ForeignKey("shared.companies.id"), nullable=False, index=True
     )
-
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     code: Mapped[str | None] = mapped_column(String(50))
     description: Mapped[str | None] = mapped_column(String(1000))
-
     parent_id: Mapped[int | None] = mapped_column(
         ForeignKey("shared.departments.id"), index=True
     )
-
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
 
     parent: Mapped[Department | None] = relationship(
         remote_side="Department.id", back_populates="children"
     )
     children: Mapped[list[Department]] = relationship(back_populates="parent")
-
     company: Mapped["Company"] = relationship()
     employees: Mapped[list["Employee"]] = relationship(back_populates="department")
 
