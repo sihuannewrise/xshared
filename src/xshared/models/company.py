@@ -1,16 +1,11 @@
-from datetime import datetime
-
-from sqlalchemy import ForeignKey, String, func
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db import Base
-
-from .counterparty import Counterparty
+from xshared.db import SharedBase
 
 
-class Company(Base):
+class Company(SharedBase):
     __tablename__ = "companies"
-    __table_args__ = {"schema": "shared"}
 
     id: Mapped[int] = mapped_column(primary_key=True)
     counterparty_id: Mapped[int] = mapped_column(
@@ -21,10 +16,9 @@ class Company(Base):
     code: Mapped[str | None] = mapped_column(String(50), unique=True)
     description: Mapped[str | None] = mapped_column(String(255))
 
+    counterparty: Mapped["Counterparty"] = relationship(
+        back_populates="company"
+    )
 
     def __repr__(self) -> str:
-        return f'<Company ({self.short_name})>'
-
-    counterparty: Mapped[Counterparty] = relationship(
-        back_populates='company'
-    )
+        return f"<Company ({self.short_name})>"
