@@ -13,7 +13,7 @@ class Department(SharedBase):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     company_id: Mapped[int] = mapped_column(
-        ForeignKey("shared.companies.id"), nullable=False, index=True
+        ForeignKey("shared.companies.id"), index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     code: Mapped[str | None] = mapped_column(String(50))
