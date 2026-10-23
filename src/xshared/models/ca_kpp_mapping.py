@@ -1,26 +1,46 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, UniqueConstraint, false, true
+from sqlalchemy import (
+    Boolean, CheckConstraint, DateTime, ForeignKey, UniqueConstraint,
+    false, true,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.models._base_entities import BaseWithPK
+from xshared.models._base_entities import TimestampedBase
 
 
-class CaKppMapping(BaseWithPK):
+class CaKppMapping(TimestampedBase):
+    """
+    Связь контрагента с КПП.
+
+    У одного контрагента может быть несколько КПП (обособленные подразделения).
+    Один КПП — основной (is_basic = true), остальные — дополнительные.
+    Период действия: valid_from / valid_till (null = бессрочно).
+    """
     __tablename__ = "ca_kpp_mappings"
     __table_args__ = (
         UniqueConstraint("counterparty_id", "kpp_id", name="uq_ca_kpp_mapping"),
+        CheckConstraint(
+            "valid_till IS NULL OR valid_from IS NULL OR valid_till >= valid_from",
+            name="ck_ca_kpp_mapping_period",
+        ),
     )
 
     counterparty_id: Mapped[int] = mapped_column(
-        ForeignKey("shared.counterparties.id", ondelete="CASCADE"), index=True
+        ForeignKey("shared.counterparties.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     kpp_id: Mapped[int] = mapped_column(
-        ForeignKey("shared.kpps.id", ondelete="CASCADE"), index=True
+        ForeignKey("shared.kpps.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
+
     is_basic: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=false(), nullable=False
     )
+
     valid_from: Mapped[datetime | None] = mapped_column(DateTime)
     valid_till: Mapped[datetime | None] = mapped_column(DateTime)
 
@@ -28,4 +48,4 @@ class CaKppMapping(BaseWithPK):
     kpp: Mapped["KPP"] = relationship(back_populates="ca_list")
 
     def __repr__(self) -> str:
-        return f'<{self.__class__.__name__} ({self.ca_inn}-{self.kpp_name})>'
+        return f"<CaKppMapping (ca={self.counterparty_id}, kpp={self.kpp_id})>"
