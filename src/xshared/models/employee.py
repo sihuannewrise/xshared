@@ -41,5 +41,5 @@ class Employee(TimestampedBase):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     user: Mapped["User | None"] = relationship(back_populates="employee")
-    company: Mapped["Company"] = relationship()
+    company: Mapped["Company"] = relationship(back_populates="employees")
     department: Mapped["Department | None"] = relationship(back_populates="employees")

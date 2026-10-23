@@ -16,6 +16,7 @@ class Company(TimestampedBase):
     description: Mapped[str | None] = mapped_column(String(255))
 
     counterparty: Mapped["Counterparty"] = relationship(back_populates="company")
+    employees: Mapped[list["Employee"]] = relationship(back_populates="company")
 
     def __repr__(self) -> str:
         return f"<Company ({self.short_name})>"
