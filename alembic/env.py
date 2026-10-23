@@ -1,4 +1,3 @@
-# alembic_shared/env.py
 import asyncio
 import ssl
 from logging.config import fileConfig
@@ -9,24 +8,10 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from app.models.base import SharedBase
-from app.models import (  # noqa: F401
-    Counterparty,
-    Company,
-    User,
-    Employee,
-    Department,
-    Property,
-    Project,
-    Provider,
-    Role,
-    Permission,
-    RolePermission,
-    UserCompanyRole,
-)
+from xshared.db.base import SharedBase
+import xshared.models  # noqa: F401
 
-# --- Настройки приложения (Pydantic Settings) ---
-from app.config import settings
+from xshared.config import settings
 
 
 config = context.config
@@ -50,20 +35,18 @@ def include_object(obj, name, type_, reflected, compare_to):
 def _connect_args() -> dict:
     if not settings.db_ssl_enabled:
         return {}
-    ssl_ctx = ssl.create_default_context()
-    ssl_ctx.check_hostname = False
-    ssl_ctx.verify_mode = ssl.CERT_NONE
+    if settings.db_ssl_ca_path:
+        ssl_ctx = ssl.create_default_context(cafile=settings.db_ssl_ca_path)
+    else:
+        ssl_ctx = ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.CERT_NONE
     return {"ssl": ssl_ctx}
 
 
 def run_migrations_offline() -> None:
-    """
-    Offline-режим: генерирует SQL без подключения к БД.
-    Полезно для ревью миграций и для сред, где нет прямого доступа к БД.
-    """
-    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url=config.get_main_option("sqlalchemy.url"),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -79,12 +62,9 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    """
-    Online-режим: выполняет миграции на реальном соединении.
-    Захватывает advisory lock, чтобы параллельные запуски Alembic
-    (несколько CI-джобов, реплик) не конфликтовали.
-    """
-    connection.execute(text("SELECT pg_advisory_lock(:key)"), {"key": ADVISORY_LOCK_KEY})
+    connection.execute(
+        text("SELECT pg_advisory_lock(:key)"), {"key": ADVISORY_LOCK_KEY}
+    )
     try:
         context.configure(
             connection=connection,
@@ -111,10 +91,8 @@ async def run_async_migrations() -> None:
         poolclass=pool.NullPool,
         connect_args=_connect_args(),
     )
-
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
-
     await connectable.dispose()
 
 

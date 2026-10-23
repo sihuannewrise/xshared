@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ._common import EntityBase
+from ._mixins import EntityBase
 from ._selectchoice import (
     CounterpartyType,
     CounterpartyBranch,
@@ -24,8 +24,8 @@ class Counterparty(EntityBase):
 
     ca_type: Mapped[Optional[CounterpartyType]] = mapped_column(String(20))
 
-    group_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey('counteragentgroup.id')
+    group_id: Mapped[int | None] = mapped_column(
+        ForeignKey('shared.counterparty_groups.id')
     )
     counterpartygroup: Mapped[Optional[CounterpartyGroup]] = relationship(
         back_populates='ca_list'
@@ -56,5 +56,4 @@ class Counterparty(EntityBase):
     company: Mapped[Optional["Company"]] = relationship(
         back_populates='counterparty',
         uselist=False,
-        cascade='all, delete-orphan',
     )

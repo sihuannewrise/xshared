@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import String, false, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db import Base
+from src.xshared.db import Base
 from ._selectchoice import EntityStatus
 
 

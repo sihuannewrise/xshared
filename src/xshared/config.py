@@ -10,6 +10,7 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://knhdb2:knhdb2@db.knh.cloud:443/knhdb2"
     db_ssl_enabled: bool = True
+    db_ssl_ca_path: str | None = None
 
 
 settings = Settings()

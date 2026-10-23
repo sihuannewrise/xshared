@@ -20,7 +20,6 @@ class Employee(SharedBase):
             "fired_at IS NULL OR hired_at IS NULL OR fired_at >= hired_at",
             name="ck_employees_period",
         ),
-        {"schema": "shared"},
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -53,6 +52,5 @@ class Employee(SharedBase):
         server_default=func.now(), onupdate=func.now()
     )
 
-    # Связи
     user: Mapped["User | None"] = relationship(back_populates="employee")
     company: Mapped["Company"] = relationship()
