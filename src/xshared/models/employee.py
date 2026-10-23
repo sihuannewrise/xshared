@@ -6,10 +6,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import SharedBase
+from xshared.models._base_entities import TimestampedBase
 
 
-class Employee(SharedBase):
+class Employee(TimestampedBase):
     __tablename__ = "employees"
     __table_args__ = (
         # Для составных FK из number_assignments (номер и работник из одного общества)

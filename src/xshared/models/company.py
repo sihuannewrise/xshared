@@ -1,10 +1,10 @@
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import SharedBase
+from xshared.models._base_entities import TimestampedBase
 
 
-class Company(SharedBase):
+class Company(TimestampedBase):
     __tablename__ = "companies"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -16,7 +16,7 @@ class Company(SharedBase):
     code: Mapped[str | None] = mapped_column(String(50), unique=True)
     description: Mapped[str | None] = mapped_column(String(255))
 
-    counterparty: Mapped["Counterparty"] = relationship(
+    counterpartygroup: Mapped[CounterpartyGroup | None] = relationship(
         back_populates="company"
     )
 

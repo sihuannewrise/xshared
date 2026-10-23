@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import String, false
+from sqlalchemy import String, false, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from xshared.db import SharedBase
@@ -8,6 +8,10 @@ from xshared.models._mixins import IdMixin, TimestampMixin
 
 
 class BaseWithPK(IdMixin, SharedBase):
+    __abstract__ = True
+
+
+class TimestampedBase(BaseWithPK, TimestampMixin):
     __abstract__ = True
 
 
@@ -24,6 +28,12 @@ class SupplementaryBase(BaseWithPK):
 
 class EntityBase(BaseWithPK):
     __abstract__ = True
+    __table_args__ = (
+        CheckConstraint(
+            "status IS NULL OR status IN ('ACTIVE','LIQUIDATING','LIQUIDATED','BANKRUPT','REORGANIZING')",
+            name="ck_%(table_name)s_status",
+        ),
+    )
 
     address: Mapped[str | None] = mapped_column(String(200))
     status: Mapped[str | None] = mapped_column(String(20))  # код EntityStatus

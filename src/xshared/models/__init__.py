@@ -22,7 +22,7 @@ __all__ = [
     "IdMixin", "TimestampMixin",
     "BaseWithPK", "EntityBase", "SupplementaryBase",
     "CounterpartyType", "EntityStatus", "CounterpartyBranch",
-    "Counterparty", "CounterpartyGroup", "Company",
+    "Counterparty", "CounterpartyGroup", "Company", "Department",
     "User", "Employee",
     "Role", "Permission", "RolePermission", "UserCompanyRole",
 ]
