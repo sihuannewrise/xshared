@@ -1,3 +1,4 @@
+# alembic/env.py
 import asyncio
 from logging.config import fileConfig
 
@@ -50,34 +51,23 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
+    """Выполняется внутри явной транзакции из run_async_migrations."""
     connection.execute(text("CREATE SCHEMA IF NOT EXISTS shared"))
-    connection.execute(
-        text("SELECT pg_advisory_lock(:key)"), {"key": ADVISORY_LOCK_KEY}
+    # connection.execute(
+    #     text("SELECT pg_advisory_lock(:key)"), {"key": ADVISORY_LOCK_KEY}
+    # )
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_schemas=True,
+        include_object=include_object,
+        version_table="alembic_version_shared",
+        version_table_schema="shared",
+        compare_type=True,
+        compare_server_default=True,
     )
-    try:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            include_schemas=True,
-            include_object=include_object,
-            version_table="alembic_version_shared",
-            version_table_schema="shared",
-            compare_type=True,
-            compare_server_default=True,
-        )
-        with context.begin_transaction():
-            context.run_migrations()
-    finally:
-        try:
-            connection.rollback()
-        except Exception:
-            pass
-        try:
-            connection.execute(
-                text("SELECT pg_advisory_unlock(:key)"), {"key": ADVISORY_LOCK_KEY}
-            )
-        except Exception:
-            pass
+    with context.begin_transaction():
+        context.run_migrations()
 
 
 async def run_async_migrations() -> None:
@@ -85,10 +75,24 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        connect_args=build_connect_args(),   # ← общий код
+        connect_args=build_connect_args(),
     )
     async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+        # Явная транзакция: COMMIT при успехе, ROLLBACK при ошибке.
+        # Без неё SQL миграции откатывается autobegin-транзакцией.
+        async with connection.begin():
+            await connection.run_sync(do_run_migrations)
+
+        # Advisory lock снимается автоматически при закрытии соединения,
+        # но можно явно — уже вне транзакции миграции.
+        # try:
+        #     await connection.execute(
+        #         text("SELECT pg_advisory_unlock(:key)"),
+        #         {"key": ADVISORY_LOCK_KEY},
+        #     )
+        # except Exception:
+        #     pass
+
     await connectable.dispose()
 
 
