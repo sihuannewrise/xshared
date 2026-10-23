@@ -1,11 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import (
-    ForeignKey,
-    String,
-    UniqueConstraint,
-    func,
-)
+from sqlalchemy import (ForeignKey, String, UniqueConstraint, func,)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import SharedBase
@@ -21,7 +16,6 @@ class Role(SharedBase):
 
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
-    # Связи
     role_permissions: Mapped[list["RolePermission"]] = relationship(
         back_populates="role", cascade="all, delete-orphan"
     )
@@ -39,7 +33,6 @@ class Permission(SharedBase):
 
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
-    # Связи
     role_permissions: Mapped[list["RolePermission"]] = relationship(
         back_populates="permission", cascade="all, delete-orphan"
     )
@@ -55,7 +48,6 @@ class RolePermission(SharedBase):
         ForeignKey("shared.permissions.id", ondelete="CASCADE"), primary_key=True
     )
 
-    # Связи
     role: Mapped["Role"] = relationship(back_populates="role_permissions")
     permission: Mapped["Permission"] = relationship(back_populates="role_permissions")
 
@@ -81,7 +73,6 @@ class UserCompanyRole(SharedBase):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     created_by: Mapped[int | None] = mapped_column(ForeignKey("shared.users.id"))
 
-    # Связи
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
     company: Mapped["Company"] = relationship()
     role: Mapped["Role"] = relationship(back_populates="user_company_roles")
