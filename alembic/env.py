@@ -50,6 +50,7 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
+    connection.execute(text("CREATE SCHEMA IF NOT EXISTS shared"))
     connection.execute(
         text("SELECT pg_advisory_lock(:key)"), {"key": ADVISORY_LOCK_KEY}
     )
@@ -67,9 +68,16 @@ def do_run_migrations(connection: Connection) -> None:
         with context.begin_transaction():
             context.run_migrations()
     finally:
-        connection.execute(
-            text("SELECT pg_advisory_unlock(:key)"), {"key": ADVISORY_LOCK_KEY}
-        )
+        try:
+            connection.rollback()
+        except Exception:
+            pass
+        try:
+            connection.execute(
+                text("SELECT pg_advisory_unlock(:key)"), {"key": ADVISORY_LOCK_KEY}
+            )
+        except Exception:
+            pass
 
 
 async def run_async_migrations() -> None:
