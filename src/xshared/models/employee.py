@@ -12,19 +12,14 @@ from xshared.models._base_entities import TimestampedBase
 class Employee(TimestampedBase):
     __tablename__ = "employees"
     __table_args__ = (
-        # Для составных FK из number_assignments (номер и работник из одного общества)
         UniqueConstraint("company_id", "id", name="uq_employees_company_id_id"),
-        # Один пользователь — один работник в рамках общества
-        UniqueConstraint("user_id", "company_id", name="uq_employees_user_company"),
-        # Табельный номер уникален в рамках общества
+        UniqueConstraint("user_id", name="uq_employees_user_id"),
         UniqueConstraint("company_id", "personnel_no", name="uq_employees_company_personnel_no"),
         CheckConstraint(
             "fired_at IS NULL OR hired_at IS NULL OR fired_at >= hired_at",
             name="ck_employees_period",
         ),
     )
-
-    id: Mapped[int] = mapped_column(primary_key=True)
 
     company_id: Mapped[int] = mapped_column(
         ForeignKey("shared.companies.id"), index=True
@@ -45,10 +40,6 @@ class Employee(TimestampedBase):
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(), onupdate=func.now()
-    )
-
-    user: Mapped["User | None"] = relationship(back_populates="employees")
+    user: Mapped["User | None"] = relationship(back_populates="employee")
     company: Mapped["Company"] = relationship()
+    department: Mapped["Department | None"] = relationship(back_populates="employees")

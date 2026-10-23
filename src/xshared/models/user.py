@@ -12,8 +12,6 @@ class User(TimestampedBase):
         UniqueConstraint("external_id", name="uq_users_external_id"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-
     external_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     username: Mapped[str | None] = mapped_column(String(100), index=True)
     email: Mapped[str | None] = mapped_column(String(255), index=True)
@@ -22,10 +20,6 @@ class User(TimestampedBase):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     last_login_at: Mapped[datetime | None]
 
-    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(), onupdate=func.now()
+    employee: Mapped["Employee | None"] = relationship(
+        back_populates="user", uselist=False
     )
-
-    # У пользователя может быть несколько работников (в разных обществах)
-    employees: Mapped[list["Employee"]] = relationship(back_populates="user")

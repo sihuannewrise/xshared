@@ -7,7 +7,6 @@ from xshared.models._base_entities import TimestampedBase
 class Company(TimestampedBase):
     __tablename__ = "companies"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
     counterparty_id: Mapped[int] = mapped_column(
         ForeignKey("shared.counterparties.id"), unique=True
     )
@@ -16,9 +15,7 @@ class Company(TimestampedBase):
     code: Mapped[str | None] = mapped_column(String(50), unique=True)
     description: Mapped[str | None] = mapped_column(String(255))
 
-    counterpartygroup: Mapped[CounterpartyGroup | None] = relationship(
-        back_populates="company"
-    )
+    counterparty: Mapped["Counterparty"] = relationship(back_populates="company")
 
     def __repr__(self) -> str:
         return f"<Company ({self.short_name})>"

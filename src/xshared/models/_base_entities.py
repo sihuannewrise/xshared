@@ -26,7 +26,7 @@ class SupplementaryBase(BaseWithPK):
         return f"<{type(self).__name__} ({self.name})>"
 
 
-class EntityBase(BaseWithPK):
+class EntityBase(TimestampedBase):
     __abstract__ = True
     __table_args__ = (
         CheckConstraint(

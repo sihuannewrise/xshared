@@ -8,10 +8,12 @@ from xshared.models._base_entities import EntityBase
 
 class Counterparty(EntityBase):
     __tablename__ = "counterparties"
-    __table_args__ = (CheckConstraint(
-        "status IS NULL OR status IN ('ACTIVE','LIQUIDATING','LIQUIDATED','BANKRUPT','REORGANIZING')",
-        name="ck_counterparties_status",
-    ))
+    __table_args__ = (
+        CheckConstraint(
+            "status IS NULL OR status IN ('ACTIVE','LIQUIDATING','LIQUIDATED','BANKRUPT','REORGANIZING')",
+            name="ck_counterparties_status",
+        ),
+    )
 
     name: Mapped[str] = mapped_column(String(160), unique=True)
     inn: Mapped[str | None] = mapped_column(String(12), unique=True)

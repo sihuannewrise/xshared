@@ -23,6 +23,6 @@ __all__ = [
     "BaseWithPK", "EntityBase", "SupplementaryBase",
     "CounterpartyType", "EntityStatus", "CounterpartyBranch",
     "Counterparty", "CounterpartyGroup", "Company", "Department",
-    "User", "Employee",
+    "User", "Employee", "Department",
     "Role", "Permission", "RolePermission", "UserCompanyRole",
 ]
