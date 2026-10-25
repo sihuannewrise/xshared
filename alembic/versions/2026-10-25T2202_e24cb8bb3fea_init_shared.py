@@ -242,19 +242,9 @@ def upgrade() -> None:
         EXECUTE FUNCTION shared.fn_ca_kpp_mapping_single_basic();
     """))
 
-    op.create_index(
-        "uq_ca_kpp_mapping_basic",
-        "ca_kpp_mappings",
-        ["counterparty_id"],
-        unique=True,
-        postgresql_where=sa.text("is_basic = true"),
-        schema="shared",
-    )
-
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_index("uq_ca_kpp_mapping_basic", table_name="ca_kpp_mappings", schema="shared")
     op.execute(sa.text("DROP TRIGGER IF EXISTS trg_ca_kpp_mapping_single_basic ON shared.ca_kpp_mappings"))
     op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_ca_kpp_mapping_single_basic()"))
 
