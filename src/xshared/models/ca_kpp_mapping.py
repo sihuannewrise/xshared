@@ -1,8 +1,8 @@
 from datetime import datetime
 
 from sqlalchemy import (
-    Boolean, CheckConstraint, DateTime, ForeignKey, UniqueConstraint,
-    false, true,
+    Boolean, CheckConstraint, DateTime, ForeignKey, Index, UniqueConstraint,
+    false, text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,6 +23,12 @@ class CaKppMapping(TimestampedBase):
         CheckConstraint(
             "valid_till IS NULL OR valid_from IS NULL OR valid_till >= valid_from",
             name="ck_ca_kpp_mapping_period",
+        ),
+        Index(
+            "uq_ca_kpp_mapping_basic",
+            "counterparty_id",
+            unique=True,
+            postgresql_where=text("is_basic = true"),
         ),
     )
 
