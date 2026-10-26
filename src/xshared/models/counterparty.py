@@ -1,36 +1,51 @@
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String
+from sqlalchemy import DateTime, Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from xshared.db import EntityBase
+from xshared.db._enums import EntityStatus, CounterpartyType, CounterpartyBranch
 
 
 class Counterparty(EntityBase):
     __tablename__ = "counterparties"
-    __table_args__ = (
-        CheckConstraint(
-            "status IS NULL OR status IN ('ACTIVE','LIQUIDATING','LIQUIDATED','BANKRUPT','REORGANIZING')",
-            name="status",
-        ),
-        CheckConstraint(
-            "counterparty_type IS NULL OR counterparty_type IN ('LEGAL','INDIVIDUAL')",
-            name="counterparty_type",
-        ),
-        CheckConstraint(
-            "branch_type IS NULL OR branch_type IN ('MAIN','BRANCH')",
-            name="branch_type",
-        ),
-    )
 
     name: Mapped[str] = mapped_column(String(160), index=True)
     inn: Mapped[str | None] = mapped_column(String(12), unique=True)
     opf_short: Mapped[str | None] = mapped_column(String(10))
     name_full_with_opf: Mapped[str | None] = mapped_column(String(300))
 
-    status: Mapped[str | None] = mapped_column(String(20))
-    counterparty_type: Mapped[str | None] = mapped_column(String(20))
-    branch_type: Mapped[str | None] = mapped_column(String(20))
+    status: Mapped[EntityStatus | None] = mapped_column(
+        Enum(
+            EntityStatus,
+            name="entity_status",
+            native_enum=False,
+            create_constraint=True,
+            validate_strings=True,
+            length=20,
+        ),
+    )
+    counterparty_type: Mapped[CounterpartyType | None] = mapped_column(
+        Enum(
+            CounterpartyType,
+            name="counterparty_type",
+            native_enum=False,
+            create_constraint=True,
+            validate_strings=True,
+            length=20,
+        ),
+    )
+
+    branch_type: Mapped[CounterpartyBranch | None] = mapped_column(
+        Enum(
+            CounterpartyBranch,
+            name="counterparty_branch",
+            native_enum=False,
+            create_constraint=True,
+            validate_strings=True,
+            length=20,
+        ),
+    )
 
     group_id: Mapped[int | None] = mapped_column(
         ForeignKey("shared.counterparty_groups.id")
