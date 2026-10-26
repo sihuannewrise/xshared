@@ -1,4 +1,7 @@
-from xshared.db.base import SharedBase
+from xshared.db.base import BaseWithPK, EntityBase, SupplementaryBase, TimestampedBase
+from xshared.db._enums import (
+    CounterpartyBranch, CounterpartyType, EntityStatus,
+)
 from xshared.db.session import (
     SessionLocal,
     dispose_engine,
@@ -7,7 +10,15 @@ from xshared.db.session import (
 )
 
 __all__ = [
-    "SharedBase",
+    "BaseWithPK",
+    "EntityBase",
+    "TimestampedBase",
+    "SupplementaryBase",
+
+    "CounterpartyBranch",
+    "CounterpartyType",
+    "EntityStatus",
+
     "engine",
     "SessionLocal",
     "session_scope",

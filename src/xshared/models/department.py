@@ -1,17 +1,16 @@
 from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import SharedBase
+from xshared.db import BaseWithPK
 
 
-class Department(SharedBase):
+class Department(BaseWithPK):
     __tablename__ = "departments"
     __table_args__ = (
         UniqueConstraint("company_id", "name", name="uq_departments_company_name"),
         UniqueConstraint("company_id", "id", name="uq_departments_company_id_id"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True)
     company_id: Mapped[int] = mapped_column(
         ForeignKey("shared.companies.id"), index=True
     )

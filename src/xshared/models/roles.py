@@ -3,13 +3,12 @@ from datetime import datetime
 from sqlalchemy import (ForeignKey, String, UniqueConstraint, func,)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import SharedBase
+from xshared.db import BaseWithPK
 
 
-class Role(SharedBase):
+class Role(BaseWithPK):
     __tablename__ = "roles"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
     code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str | None] = mapped_column(String(255))
@@ -24,10 +23,9 @@ class Role(SharedBase):
     )
 
 
-class Permission(SharedBase):
+class Permission(BaseWithPK):
     __tablename__ = "permissions"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
     code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(String(255))
 
@@ -38,7 +36,7 @@ class Permission(SharedBase):
     )
 
 
-class RolePermission(SharedBase):
+class RolePermission(BaseWithPK):
     __tablename__ = "role_permissions"
 
     role_id: Mapped[int] = mapped_column(
@@ -52,13 +50,11 @@ class RolePermission(SharedBase):
     permission: Mapped["Permission"] = relationship(back_populates="role_permissions")
 
 
-class UserCompanyRole(SharedBase):
+class UserCompanyRole(BaseWithPK):
     __tablename__ = "user_company_roles"
     __table_args__ = (
         UniqueConstraint("user_id", "company_id", name="uq_user_company_role"),
     )
-
-    id: Mapped[int] = mapped_column(primary_key=True)
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey("shared.users.id", ondelete="CASCADE"), nullable=False, index=True

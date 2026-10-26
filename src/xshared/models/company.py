@@ -1,7 +1,7 @@
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.models._base_entities import TimestampedBase
+from xshared.db import TimestampedBase
 
 
 class Company(TimestampedBase):

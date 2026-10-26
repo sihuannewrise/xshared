@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Mapped, relationship
 
-from xshared.models._base_entities import SupplementaryBase
+from xshared.db import SupplementaryBase
 
 
 class CounterpartyGroup(SupplementaryBase):

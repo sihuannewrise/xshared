@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.models._base_entities import EntityBase
+from xshared.db import EntityBase
 
 
 class Counterparty(EntityBase):

@@ -5,7 +5,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import func
 
-from xshared.models._base_entities import TimestampedBase
+from xshared.db import TimestampedBase
 
 
 class Person(TimestampedBase):

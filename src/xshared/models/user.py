@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.models._base_entities import TimestampedBase
+from xshared.db import TimestampedBase
 
 
 class User(TimestampedBase):
