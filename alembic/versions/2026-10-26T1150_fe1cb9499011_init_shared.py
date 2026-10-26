@@ -1,8 +1,8 @@
 """init shared
 
-Revision ID: eaa3105725ac
+Revision ID: fe1cb9499011
 Revises:
-Create Date: 2026-10-26 09:09:36.998026+03:00
+Create Date: 2026-10-26 11:50:36.307106+03:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'eaa3105725ac'
+revision: str = 'fe1cb9499011'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -47,6 +47,22 @@ def upgrade() -> None:
     schema='shared'
     )
     op.create_index(op.f('ix_shared_permissions_code'), 'permissions', ['code'], unique=True, schema='shared')
+    op.create_table('persons',
+    sa.Column('first_name', sa.String(length=100), nullable=False),
+    sa.Column('patronymic_name', sa.String(length=100), nullable=True),
+    sa.Column('last_name', sa.String(length=100), nullable=False),
+    sa.Column('birthdate', sa.Date(), nullable=True),
+    sa.Column('social_no', sa.String(length=20), nullable=True),
+    sa.Column('email', sa.String(length=150), nullable=True),
+    sa.Column('phone', sa.String(length=20), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_persons')),
+    sa.UniqueConstraint('last_name', 'first_name', 'patronymic_name', 'birthdate', name='uq_persons_full_name_birthdate'),
+    sa.UniqueConstraint('social_no', name=op.f('uq_persons_social_no')),
+    schema='shared'
+    )
     op.create_table('roles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('code', sa.String(length=50), nullable=False),
@@ -168,6 +184,33 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_shared_departments_company_id'), 'departments', ['company_id'], unique=False, schema='shared')
     op.create_index(op.f('ix_shared_departments_parent_id'), 'departments', ['parent_id'], unique=False, schema='shared')
+    op.create_table('employees',
+    sa.Column('person_id', sa.Integer(), nullable=False),
+    sa.Column('company_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('personnel_no', sa.String(length=10), nullable=True),
+    sa.Column('social_no', sa.String(length=20), nullable=True),
+    sa.Column('hired_at', sa.Date(), nullable=True),
+    sa.Column('fired_at', sa.Date(), nullable=True),
+    sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint('fired_at IS NULL OR hired_at IS NULL OR fired_at >= hired_at', name=op.f('ck_employees_period')),
+    sa.ForeignKeyConstraint(['company_id'], ['shared.companies.id'], name=op.f('fk_employees_company_id_companies')),
+    sa.ForeignKeyConstraint(['person_id'], ['shared.persons.id'], name=op.f('fk_employees_person_id_persons'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['user_id'], ['shared.users.id'], name=op.f('fk_employees_user_id_users')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_employees')),
+    sa.UniqueConstraint('company_id', 'id', name='uq_employees_company_id_id'),
+    sa.UniqueConstraint('company_id', 'personnel_no', name='uq_employees_company_personnel_no'),
+    sa.UniqueConstraint('person_id', 'company_id', name='uq_employees_person_company'),
+    sa.UniqueConstraint('social_no', name=op.f('uq_employees_social_no')),
+    sa.UniqueConstraint('user_id', 'company_id', name='uq_employees_user_id_company_id'),
+    schema='shared'
+    )
+    op.create_index(op.f('ix_shared_employees_company_id'), 'employees', ['company_id'], unique=False, schema='shared')
+    op.create_index(op.f('ix_shared_employees_person_id'), 'employees', ['person_id'], unique=False, schema='shared')
+    op.create_index(op.f('ix_shared_employees_user_id'), 'employees', ['user_id'], unique=False, schema='shared')
     op.create_table('user_company_roles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
@@ -186,49 +229,45 @@ def upgrade() -> None:
     op.create_index(op.f('ix_shared_user_company_roles_company_id'), 'user_company_roles', ['company_id'], unique=False, schema='shared')
     op.create_index(op.f('ix_shared_user_company_roles_role_id'), 'user_company_roles', ['role_id'], unique=False, schema='shared')
     op.create_index(op.f('ix_shared_user_company_roles_user_id'), 'user_company_roles', ['user_id'], unique=False, schema='shared')
-    op.create_table('employees',
-    sa.Column('company_id', sa.Integer(), nullable=True),
-    sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('first_name', sa.String(length=100), nullable=False),
-    sa.Column('patronymic_name', sa.String(length=100), nullable=True),
-    sa.Column('last_name', sa.String(length=100), nullable=True),
-    sa.Column('birthdate', sa.Date(), nullable=True),
-    sa.Column('personnel_no', sa.String(length=10), nullable=True),
-    sa.Column('social_no', sa.String(length=20), nullable=True),
+    op.create_table('employee_assignments',
+    sa.Column('employee_id', sa.Integer(), nullable=False),
     sa.Column('position', sa.String(length=255), nullable=True),
     sa.Column('department_id', sa.Integer(), nullable=True),
-    sa.Column('hired_at', sa.Date(), nullable=True),
-    sa.Column('fired_at', sa.Date(), nullable=True),
-    sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
+    sa.Column('valid_from', sa.Date(), nullable=False),
+    sa.Column('valid_to', sa.Date(), nullable=True),
+    sa.Column('reason', sa.String(length=100), nullable=True),
+    sa.Column('changed_by', sa.Integer(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.CheckConstraint('fired_at IS NULL OR hired_at IS NULL OR fired_at >= hired_at', name=op.f('ck_employees_period')),
-    sa.ForeignKeyConstraint(['company_id'], ['shared.companies.id'], name=op.f('fk_employees_company_id_companies')),
-    sa.ForeignKeyConstraint(['department_id'], ['shared.departments.id'], name=op.f('fk_employees_department_id_departments')),
-    sa.ForeignKeyConstraint(['user_id'], ['shared.users.id'], name=op.f('fk_employees_user_id_users')),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_employees')),
-    sa.UniqueConstraint('company_id', 'id', name='uq_employees_company_id_id'),
-    sa.UniqueConstraint('company_id', 'personnel_no', name='uq_employees_company_personnel_no'),
-    sa.UniqueConstraint('social_no', name=op.f('uq_employees_social_no')),
-    sa.UniqueConstraint('user_id', name='uq_employees_user_id'),
+    sa.CheckConstraint('valid_to IS NULL OR valid_to >= valid_from', name=op.f('ck_employee_assignments_period')),
+    sa.ForeignKeyConstraint(['changed_by'], ['shared.users.id'], name=op.f('fk_employee_assignments_changed_by_users')),
+    sa.ForeignKeyConstraint(['department_id'], ['shared.departments.id'], name=op.f('fk_employee_assignments_department_id_departments')),
+    sa.ForeignKeyConstraint(['employee_id'], ['shared.employees.id'], name=op.f('fk_employee_assignments_employee_id_employees'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_employee_assignments')),
     schema='shared'
     )
-    op.create_index(op.f('ix_shared_employees_company_id'), 'employees', ['company_id'], unique=False, schema='shared')
-    op.create_index(op.f('ix_shared_employees_user_id'), 'employees', ['user_id'], unique=False, schema='shared')
+    op.create_index('ix_employee_assignments_employee_period', 'employee_assignments', ['employee_id', 'valid_from'], unique=False, schema='shared')
+    op.create_index(op.f('ix_shared_employee_assignments_employee_id'), 'employee_assignments', ['employee_id'], unique=False, schema='shared')
+    op.create_index('uq_employee_assignments_current', 'employee_assignments', ['employee_id'], unique=True, schema='shared', postgresql_where=sa.text('valid_to IS NULL'))
     # ### end Alembic commands ###
 
+    # ============================================================
+    # Триггер 1: один основной КПП у контрагента
+    # ============================================================
     op.execute(sa.text("""
         CREATE OR REPLACE FUNCTION shared.fn_ca_kpp_mapping_single_basic()
         RETURNS TRIGGER LANGUAGE plpgsql AS $$
         BEGIN
             IF pg_trigger_depth() > 1 THEN RETURN NEW; END IF;
             IF NEW.is_basic IS NOT TRUE THEN RETURN NEW; END IF;
+
             UPDATE shared.ca_kpp_mappings
-            SET is_basic = false
-            WHERE counterparty_id = NEW.counterparty_id
-            AND id <> COALESCE(NEW.id, -1)
-            AND is_basic = true;
+               SET is_basic = false
+             WHERE counterparty_id = NEW.counterparty_id
+               AND id <> COALESCE(NEW.id, -1)
+               AND is_basic = true;
+
             RETURN NEW;
         END;
         $$;
@@ -238,24 +277,62 @@ def upgrade() -> None:
         CREATE TRIGGER trg_ca_kpp_mapping_single_basic
         BEFORE INSERT OR UPDATE OF is_basic, counterparty_id
         ON shared.ca_kpp_mappings
-        FOR EACH ROW WHEN (NEW.is_basic IS TRUE)
+        FOR EACH ROW
+        WHEN (NEW.is_basic IS TRUE)
         EXECUTE FUNCTION shared.fn_ca_kpp_mapping_single_basic();
+    """))
+
+    # ================================================
+    # Триггер 2: авто-закрытие предыдущей должности
+    # ================================================
+    op.execute(sa.text("""
+        CREATE OR REPLACE FUNCTION shared.fn_employee_assignment_close_previous()
+        RETURNS TRIGGER LANGUAGE plpgsql AS $$
+        BEGIN
+            IF pg_trigger_depth() > 1 THEN RETURN NEW; END IF;
+            IF NEW.valid_to IS NOT NULL THEN RETURN NEW; END IF;
+
+            UPDATE shared.employee_assignments
+               SET valid_to = NEW.valid_from
+             WHERE employee_id = NEW.employee_id
+               AND valid_to IS NULL
+               AND id <> COALESCE(NEW.id, -1);
+
+            RETURN NEW;
+        END;
+        $$;
+    """))
+
+    op.execute(sa.text("""
+        CREATE TRIGGER trg_employee_assignment_close_previous
+        BEFORE INSERT ON shared.employee_assignments
+        FOR EACH ROW
+        WHEN (NEW.valid_to IS NULL)
+        EXECUTE FUNCTION shared.fn_employee_assignment_close_previous();
     """))
 
 
 def downgrade() -> None:
-    """Downgrade schema."""
+    # Сначала триггеры и функции (в обратном порядке создания)
+    op.execute(sa.text("DROP TRIGGER IF EXISTS trg_employee_assignment_close_previous ON shared.employee_assignments"))
+    op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_employee_assignment_close_previous()"))
+
     op.execute(sa.text("DROP TRIGGER IF EXISTS trg_ca_kpp_mapping_single_basic ON shared.ca_kpp_mappings"))
     op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_ca_kpp_mapping_single_basic()"))
 
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_index(op.f('ix_shared_employees_user_id'), table_name='employees', schema='shared')
-    op.drop_index(op.f('ix_shared_employees_company_id'), table_name='employees', schema='shared')
-    op.drop_table('employees', schema='shared')
+    op.drop_index('uq_employee_assignments_current', table_name='employee_assignments', schema='shared', postgresql_where=sa.text('valid_to IS NULL'))
+    op.drop_index(op.f('ix_shared_employee_assignments_employee_id'), table_name='employee_assignments', schema='shared')
+    op.drop_index('ix_employee_assignments_employee_period', table_name='employee_assignments', schema='shared')
+    op.drop_table('employee_assignments', schema='shared')
     op.drop_index(op.f('ix_shared_user_company_roles_user_id'), table_name='user_company_roles', schema='shared')
     op.drop_index(op.f('ix_shared_user_company_roles_role_id'), table_name='user_company_roles', schema='shared')
     op.drop_index(op.f('ix_shared_user_company_roles_company_id'), table_name='user_company_roles', schema='shared')
     op.drop_table('user_company_roles', schema='shared')
+    op.drop_index(op.f('ix_shared_employees_user_id'), table_name='employees', schema='shared')
+    op.drop_index(op.f('ix_shared_employees_person_id'), table_name='employees', schema='shared')
+    op.drop_index(op.f('ix_shared_employees_company_id'), table_name='employees', schema='shared')
+    op.drop_table('employees', schema='shared')
     op.drop_index(op.f('ix_shared_departments_parent_id'), table_name='departments', schema='shared')
     op.drop_index(op.f('ix_shared_departments_company_id'), table_name='departments', schema='shared')
     op.drop_table('departments', schema='shared')
@@ -273,6 +350,7 @@ def downgrade() -> None:
     op.drop_table('users', schema='shared')
     op.drop_index(op.f('ix_shared_roles_code'), table_name='roles', schema='shared')
     op.drop_table('roles', schema='shared')
+    op.drop_table('persons', schema='shared')
     op.drop_index(op.f('ix_shared_permissions_code'), table_name='permissions', schema='shared')
     op.drop_table('permissions', schema='shared')
     op.drop_table('kpps', schema='shared')

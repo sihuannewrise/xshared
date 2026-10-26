@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, String, UniqueConstraint, func
+from sqlalchemy import Boolean, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from xshared.models._base_entities import TimestampedBase
@@ -21,5 +21,5 @@ class User(TimestampedBase):
     last_login_at: Mapped[datetime | None]
 
     employee: Mapped["Employee | None"] = relationship(
-        back_populates="user", uselist=False
+        back_populates="user", lazy="selectin", uselist=False
     )
