@@ -63,7 +63,7 @@ shared DB for other services
 
 
 def downgrade() -> None:
-    # Сначала триггеры и функции (в обратном порядке создания)
+    """Downgrade schema."""
     op.execute(sa.text("DROP TRIGGER IF EXISTS trg_employee_assignment_close_previous ON shared.employee_assignments"))
     op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_employee_assignment_close_previous()"))
 

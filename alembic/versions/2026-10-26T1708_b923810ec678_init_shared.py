@@ -1,8 +1,8 @@
 """init shared
 
-Revision ID: 3a1ffebd0252
+Revision ID: b923810ec678
 Revises:
-Create Date: 2026-10-26 13:30:25.909989+03:00
+Create Date: 2026-10-26 17:08:37.396986+03:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '3a1ffebd0252'
+revision: str = 'b923810ec678'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -95,9 +95,10 @@ def upgrade() -> None:
     sa.Column('inn', sa.String(length=12), nullable=True),
     sa.Column('opf_short', sa.String(length=10), nullable=True),
     sa.Column('name_full_with_opf', sa.String(length=300), nullable=True),
-    sa.Column('counterparty_type', sa.String(length=20), nullable=True),
+    sa.Column('status', sa.Enum('ACTIVE', 'LIQUIDATING', 'LIQUIDATED', 'BANKRUPT', 'REORGANIZING', name='entity_status', native_enum=False, create_constraint=True, length=20, schema='shared'), nullable=True),
+    sa.Column('counterparty_type', sa.Enum('LEGAL', 'INDIVIDUAL', name='counterparty_type', native_enum=False, create_constraint=True, length=20, schema='shared'), nullable=True),
+    sa.Column('branch_type', sa.Enum('MAIN', 'BRANCH', name='counterparty_branch', native_enum=False, create_constraint=True, length=20, schema='shared'), nullable=True),
     sa.Column('group_id', sa.Integer(), nullable=True),
-    sa.Column('branch_type', sa.String(length=20), nullable=True),
     sa.Column('ogrn', sa.String(length=20), nullable=True),
     sa.Column('ogrn_date', sa.DateTime(), nullable=True),
     sa.Column('fio_surname', sa.String(length=50), nullable=True),
@@ -109,7 +110,6 @@ def upgrade() -> None:
     sa.Column('email', sa.String(length=150), nullable=True),
     sa.Column('address_full', sa.String(length=500), nullable=True),
     sa.Column('address', sa.String(length=200), nullable=True),
-    sa.Column('status', sa.String(length=20), nullable=True),
     sa.Column('actuality_date', sa.DateTime(), nullable=True),
     sa.Column('registration_date', sa.DateTime(), nullable=True),
     sa.Column('liquidation_date', sa.DateTime(), nullable=True),
@@ -117,9 +117,6 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.CheckConstraint("branch_type IS NULL OR branch_type IN ('MAIN','BRANCH')", name=op.f('ck_counterparties_branch_type')),
-    sa.CheckConstraint("counterparty_type IS NULL OR counterparty_type IN ('LEGAL','INDIVIDUAL')", name=op.f('ck_counterparties_counterparty_type')),
-    sa.CheckConstraint("status IS NULL OR status IN ('ACTIVE','LIQUIDATING','LIQUIDATED','BANKRUPT','REORGANIZING')", name=op.f('ck_counterparties_status')),
     sa.ForeignKeyConstraint(['group_id'], ['shared.counterparty_groups.id'], name=op.f('fk_counterparties_group_id_counterparty_groups')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_counterparties')),
     sa.UniqueConstraint('inn', name=op.f('uq_counterparties_inn')),
@@ -314,7 +311,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Сначала триггеры и функции (в обратном порядке создания)
+    """Downgrade schema."""
     op.execute(sa.text("DROP TRIGGER IF EXISTS trg_employee_assignment_close_previous ON shared.employee_assignments"))
     op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_employee_assignment_close_previous()"))
 
