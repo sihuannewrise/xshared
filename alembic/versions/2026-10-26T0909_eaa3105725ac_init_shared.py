@@ -1,8 +1,8 @@
 """init shared
 
-Revision ID: efaae81f77e4
+Revision ID: eaa3105725ac
 Revises:
-Create Date: 2026-10-26 08:54:01.963992+03:00
+Create Date: 2026-10-26 09:09:36.998026+03:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'efaae81f77e4'
+revision: str = 'eaa3105725ac'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -101,9 +101,9 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.CheckConstraint("branch_type IS NULL OR branch_type IN ('MAIN','BRANCH')", name=op.f('ck_counterparties_ck_counterparties_branch_type')),
-    sa.CheckConstraint("counterparty_type IS NULL OR counterparty_type IN ('LEGAL','INDIVIDUAL')", name=op.f('ck_counterparties_ck_counterparties_counterparty_type')),
-    sa.CheckConstraint("status IS NULL OR status IN ('ACTIVE','LIQUIDATING','LIQUIDATED','BANKRUPT','REORGANIZING')", name=op.f('ck_counterparties_ck_counterparties_status')),
+    sa.CheckConstraint("branch_type IS NULL OR branch_type IN ('MAIN','BRANCH')", name=op.f('ck_counterparties_branch_type')),
+    sa.CheckConstraint("counterparty_type IS NULL OR counterparty_type IN ('LEGAL','INDIVIDUAL')", name=op.f('ck_counterparties_counterparty_type')),
+    sa.CheckConstraint("status IS NULL OR status IN ('ACTIVE','LIQUIDATING','LIQUIDATED','BANKRUPT','REORGANIZING')", name=op.f('ck_counterparties_status')),
     sa.ForeignKeyConstraint(['group_id'], ['shared.counterparty_groups.id'], name=op.f('fk_counterparties_group_id_counterparty_groups')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_counterparties')),
     sa.UniqueConstraint('inn', name=op.f('uq_counterparties_inn')),
@@ -127,7 +127,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.CheckConstraint('valid_till IS NULL OR valid_from IS NULL OR valid_till >= valid_from', name=op.f('ck_ca_kpp_mappings_ck_ca_kpp_mapping_period')),
+    sa.CheckConstraint('valid_till IS NULL OR valid_from IS NULL OR valid_till >= valid_from', name=op.f('ck_ca_kpp_mappings_period')),
     sa.ForeignKeyConstraint(['counterparty_id'], ['shared.counterparties.id'], name=op.f('fk_ca_kpp_mappings_counterparty_id_counterparties'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['kpp_id'], ['shared.kpps.id'], name=op.f('fk_ca_kpp_mappings_kpp_id_kpps'), ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_ca_kpp_mappings')),
@@ -217,7 +217,6 @@ def upgrade() -> None:
     op.create_index(op.f('ix_shared_employees_company_id'), 'employees', ['company_id'], unique=False, schema='shared')
     op.create_index(op.f('ix_shared_employees_user_id'), 'employees', ['user_id'], unique=False, schema='shared')
     # ### end Alembic commands ###
-
 
     op.execute(sa.text("""
         CREATE OR REPLACE FUNCTION shared.fn_ca_kpp_mapping_single_basic()

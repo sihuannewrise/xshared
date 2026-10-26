@@ -11,15 +11,15 @@ class Counterparty(EntityBase):
     __table_args__ = (
         CheckConstraint(
             "status IS NULL OR status IN ('ACTIVE','LIQUIDATING','LIQUIDATED','BANKRUPT','REORGANIZING')",
-            name="ck_counterparties_status",
+            name="status",
         ),
         CheckConstraint(
             "counterparty_type IS NULL OR counterparty_type IN ('LEGAL','INDIVIDUAL')",
-            name="ck_counterparties_counterparty_type",
+            name="counterparty_type",
         ),
         CheckConstraint(
             "branch_type IS NULL OR branch_type IN ('MAIN','BRANCH')",
-            name="ck_counterparties_branch_type",
+            name="branch_type",
         ),
     )
 

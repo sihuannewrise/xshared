@@ -22,7 +22,7 @@ class CaKppMapping(TimestampedBase):
         UniqueConstraint("counterparty_id", "kpp_id", name="uq_ca_kpp_mapping"),
         CheckConstraint(
             "valid_till IS NULL OR valid_from IS NULL OR valid_till >= valid_from",
-            name="ck_ca_kpp_mapping_period",
+            name="period",
         ),
         Index(
             "uq_ca_kpp_mapping_basic",
