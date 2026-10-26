@@ -1,4 +1,3 @@
-# src/xshared/models/employee.py
 from datetime import date
 
 from sqlalchemy import (

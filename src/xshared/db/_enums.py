@@ -12,7 +12,6 @@ class CounterpartyType(str, Enum):
 
 
 class EntityStatus(str, Enum):
-    """For validation in pydantic schemes/"""
     ACTIVE = "ACTIVE"
     LIQUIDATING = "LIQUIDATING"
     LIQUIDATED = "LIQUIDATED"
