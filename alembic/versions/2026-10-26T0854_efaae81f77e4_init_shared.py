@@ -1,8 +1,8 @@
 """init shared
 
-Revision ID: e24cb8bb3fea
+Revision ID: efaae81f77e4
 Revises:
-Create Date: 2026-10-25 22:02:22.223280+03:00
+Create Date: 2026-10-26 08:54:01.963992+03:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'e24cb8bb3fea'
+revision: str = 'efaae81f77e4'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -203,7 +203,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.CheckConstraint('fired_at IS NULL OR hired_at IS NULL OR fired_at >= hired_at', name=op.f('ck_employees_ck_employees_period')),
+    sa.CheckConstraint('fired_at IS NULL OR hired_at IS NULL OR fired_at >= hired_at', name=op.f('ck_employees_period')),
     sa.ForeignKeyConstraint(['company_id'], ['shared.companies.id'], name=op.f('fk_employees_company_id_companies')),
     sa.ForeignKeyConstraint(['department_id'], ['shared.departments.id'], name=op.f('fk_employees_department_id_departments')),
     sa.ForeignKeyConstraint(['user_id'], ['shared.users.id'], name=op.f('fk_employees_user_id_users')),
@@ -217,6 +217,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_shared_employees_company_id'), 'employees', ['company_id'], unique=False, schema='shared')
     op.create_index(op.f('ix_shared_employees_user_id'), 'employees', ['user_id'], unique=False, schema='shared')
     # ### end Alembic commands ###
+
 
     op.execute(sa.text("""
         CREATE OR REPLACE FUNCTION shared.fn_ca_kpp_mapping_single_basic()

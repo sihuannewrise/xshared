@@ -18,7 +18,7 @@ class Employee(TimestampedBase):
         UniqueConstraint("company_id", "personnel_no", name="uq_employees_company_personnel_no"),
         CheckConstraint(
             "fired_at IS NULL OR hired_at IS NULL OR fired_at >= hired_at",
-            name="ck_employees_period",
+            name="period",
         ),
     )
 
