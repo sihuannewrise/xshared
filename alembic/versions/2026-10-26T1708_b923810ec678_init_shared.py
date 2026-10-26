@@ -309,9 +309,62 @@ def upgrade() -> None:
         EXECUTE FUNCTION shared.fn_employee_assignment_close_previous();
     """))
 
+    # ============================================================
+    # Триггер 3: запрет циклов в departments.parent_id
+    # ============================================================
+    op.execute(sa.text("""
+        CREATE OR REPLACE FUNCTION shared.fn_departments_prevent_cycle()
+        RETURNS TRIGGER LANGUAGE plpgsql AS $$
+        DECLARE
+            current_parent_id INTEGER;
+            visited_ids INTEGER[] := ARRAY[NEW.id];
+        BEGIN
+            -- Нет родителя — цикла быть не может
+            IF NEW.parent_id IS NULL THEN
+                RETURN NEW;
+            END IF;
+
+            current_parent_id := NEW.parent_id;
+
+            -- Идём вверх по цепочке родителей
+            WHILE current_parent_id IS NOT NULL LOOP
+                IF current_parent_id = ANY(visited_ids) THEN
+                    RAISE EXCEPTION
+                        'Циклическая ссылка в departments: id=% не может иметь предком %',
+                        NEW.id, current_parent_id
+                        USING ERRCODE = '23514';  -- check_violation
+                END IF;
+
+                visited_ids := array_append(visited_ids, current_parent_id);
+
+                SELECT parent_id INTO current_parent_id
+                FROM shared.departments
+                WHERE id = current_parent_id;
+
+                -- Родитель не найден (битые данные) — выходим
+                IF NOT FOUND THEN
+                    current_parent_id := NULL;
+                END IF;
+            END LOOP;
+
+            RETURN NEW;
+        END;
+        $$;
+    """))
+
+    op.execute(sa.text("""
+        CREATE TRIGGER trg_departments_prevent_cycle
+        BEFORE INSERT OR UPDATE OF parent_id
+        ON shared.departments
+        FOR EACH ROW
+        EXECUTE FUNCTION shared.fn_departments_prevent_cycle();
+    """))
 
 def downgrade() -> None:
     """Downgrade schema."""
+    op.execute(sa.text("DROP TRIGGER IF EXISTS trg_departments_prevent_cycle ON shared.departments"))
+    op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_departments_prevent_cycle()"))
+
     op.execute(sa.text("DROP TRIGGER IF EXISTS trg_employee_assignment_close_previous ON shared.employee_assignments"))
     op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_employee_assignment_close_previous()"))
 

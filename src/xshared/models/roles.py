@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import (ForeignKey, String, UniqueConstraint, func,)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import BaseWithPK
+from xshared.db import BaseWithPK, SharedBase
 
 
 class Role(BaseWithPK):
@@ -36,7 +36,7 @@ class Permission(BaseWithPK):
     )
 
 
-class RolePermission(BaseWithPK):
+class RolePermission(SharedBase):
     __tablename__ = "role_permissions"
 
     role_id: Mapped[int] = mapped_column(

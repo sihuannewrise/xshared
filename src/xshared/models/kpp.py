@@ -7,7 +7,7 @@ from xshared.db import TimestampedBase
 class KPP(TimestampedBase):
     __tablename__ = "kpps"
     __table_args__ = (
-        CheckConstraint("name ~ '^[0-9]{9}$'", name="ck_kpps_name_format"),
+        CheckConstraint("name ~ '^[0-9]{9}$'", name="name_format"),
     )
 
     name: Mapped[str] = mapped_column(String(9), unique=True, nullable=False)

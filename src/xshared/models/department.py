@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from xshared.db import BaseWithPK
@@ -8,7 +8,8 @@ class Department(BaseWithPK):
     __tablename__ = "departments"
     __table_args__ = (
         UniqueConstraint("company_id", "name", name="uq_departments_company_name"),
-        UniqueConstraint("company_id", "id", name="uq_departments_company_id_id"),
+        UniqueConstraint("company_id", name="uq_departments_company_id"),
+        CheckConstraint("parent_id IS NULL OR parent_id <> id", name="no_self_parent"),
     )
 
     company_id: Mapped[int] = mapped_column(
@@ -16,7 +17,7 @@ class Department(BaseWithPK):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     code: Mapped[str | None] = mapped_column(String(50))
-    description: Mapped[str | None] = mapped_column(String(1000))
+    description: Mapped[str | None] = mapped_column(String(100))
     parent_id: Mapped[int | None] = mapped_column(
         ForeignKey("shared.departments.id"), index=True
     )
