@@ -44,7 +44,9 @@ class EmployeeAssignment(TimestampedBase):
     changed_by: Mapped[int | None] = mapped_column(ForeignKey("shared.users.id"))
 
     employee: Mapped["Employee"] = relationship(back_populates="assignments")
-    department: Mapped["Department | None"] = relationship(lazy="selectin")
+    department: Mapped["Department | None"] = relationship(
+        back_populates="assignments", lazy="selectin"
+    )
 
     def __repr__(self) -> str:
         return f"<EmployeeAssignment (employee={self.employee_id}, {self.position})>"

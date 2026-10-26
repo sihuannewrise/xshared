@@ -6,6 +6,7 @@ from sqlalchemy import (
     UniqueConstraint, true,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.ext.associationproxy import association_proxy
 
 from xshared.db import TimestampedBase
 
@@ -50,3 +51,4 @@ class Employee(TimestampedBase):
         back_populates="employee", lazy="selectin",
         order_by="EmployeeAssignment.valid_from.desc()",
     )
+    departments = association_proxy("assignments", "department")

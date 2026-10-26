@@ -27,7 +27,9 @@ class Department(BaseWithPK):
     )
     children: Mapped[list[Department]] = relationship(back_populates="parent")
     company: Mapped["Company"] = relationship()
-    employees: Mapped[list["Employee"]] = relationship(back_populates="department")
+    assignments: Mapped[list["EmployeeAssignment"]] = relationship(
+        back_populates="department"
+    )
 
     def __repr__(self) -> str:
         return f"<Department ({self.name})>"

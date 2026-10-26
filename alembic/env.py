@@ -7,11 +7,12 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
+from xshared.config import settings
 from xshared.db import SharedBase
 from xshared.db.session import build_connect_args
+
 import xshared.models  # noqa: F401
 
-from xshared.config import settings
 
 
 config = context.config

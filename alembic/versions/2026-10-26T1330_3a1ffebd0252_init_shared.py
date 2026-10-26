@@ -1,8 +1,8 @@
 """init shared
 
-Revision ID: fe1cb9499011
+Revision ID: 3a1ffebd0252
 Revises:
-Create Date: 2026-10-26 11:50:36.307106+03:00
+Create Date: 2026-10-26 13:30:25.909989+03:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'fe1cb9499011'
+revision: str = '3a1ffebd0252'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -39,10 +39,10 @@ def upgrade() -> None:
     schema='shared'
     )
     op.create_table('permissions',
-    sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('code', sa.String(length=100), nullable=False),
     sa.Column('description', sa.String(length=255), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_permissions')),
     schema='shared'
     )
@@ -64,11 +64,11 @@ def upgrade() -> None:
     schema='shared'
     )
     op.create_table('roles',
-    sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('description', sa.String(length=255), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_roles')),
     schema='shared'
     )
@@ -129,9 +129,10 @@ def upgrade() -> None:
     op.create_table('role_permissions',
     sa.Column('role_id', sa.Integer(), nullable=False),
     sa.Column('permission_id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['permission_id'], ['shared.permissions.id'], name=op.f('fk_role_permissions_permission_id_permissions'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['role_id'], ['shared.roles.id'], name=op.f('fk_role_permissions_role_id_roles'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('role_id', 'permission_id', name=op.f('pk_role_permissions')),
+    sa.PrimaryKeyConstraint('role_id', 'permission_id', 'id', name=op.f('pk_role_permissions')),
     schema='shared'
     )
     op.create_table('ca_kpp_mappings',
@@ -168,13 +169,13 @@ def upgrade() -> None:
     schema='shared'
     )
     op.create_table('departments',
-    sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('code', sa.String(length=50), nullable=True),
     sa.Column('description', sa.String(length=1000), nullable=True),
     sa.Column('parent_id', sa.Integer(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['company_id'], ['shared.companies.id'], name=op.f('fk_departments_company_id_companies')),
     sa.ForeignKeyConstraint(['parent_id'], ['shared.departments.id'], name=op.f('fk_departments_parent_id_departments')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_departments')),
@@ -212,12 +213,12 @@ def upgrade() -> None:
     op.create_index(op.f('ix_shared_employees_person_id'), 'employees', ['person_id'], unique=False, schema='shared')
     op.create_index(op.f('ix_shared_employees_user_id'), 'employees', ['user_id'], unique=False, schema='shared')
     op.create_table('user_company_roles',
-    sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('role_id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.Integer(), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['company_id'], ['shared.companies.id'], name=op.f('fk_user_company_roles_company_id_companies'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['created_by'], ['shared.users.id'], name=op.f('fk_user_company_roles_created_by_users')),
     sa.ForeignKeyConstraint(['role_id'], ['shared.roles.id'], name=op.f('fk_user_company_roles_role_id_roles'), ondelete='RESTRICT'),
