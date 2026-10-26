@@ -1,77 +1,6 @@
 # xshared
 shared DB for other services
 
-
-    # ============================================================
-    # Триггер 1: один основной КПП у контрагента
-    # ============================================================
-    op.execute(sa.text("""
-        CREATE OR REPLACE FUNCTION shared.fn_ca_kpp_mapping_single_basic()
-        RETURNS TRIGGER LANGUAGE plpgsql AS $$
-        BEGIN
-            IF pg_trigger_depth() > 1 THEN RETURN NEW; END IF;
-            IF NEW.is_basic IS NOT TRUE THEN RETURN NEW; END IF;
-
-            UPDATE shared.ca_kpp_mappings
-               SET is_basic = false
-             WHERE counterparty_id = NEW.counterparty_id
-               AND id <> COALESCE(NEW.id, -1)
-               AND is_basic = true;
-
-            RETURN NEW;
-        END;
-        $$;
-    """))
-
-    op.execute(sa.text("""
-        CREATE TRIGGER trg_ca_kpp_mapping_single_basic
-        BEFORE INSERT OR UPDATE OF is_basic, counterparty_id
-        ON shared.ca_kpp_mappings
-        FOR EACH ROW
-        WHEN (NEW.is_basic IS TRUE)
-        EXECUTE FUNCTION shared.fn_ca_kpp_mapping_single_basic();
-    """))
-
-    # ================================================
-    # Триггер 2: авто-закрытие предыдущей должности
-    # ================================================
-    op.execute(sa.text("""
-        CREATE OR REPLACE FUNCTION shared.fn_employee_assignment_close_previous()
-        RETURNS TRIGGER LANGUAGE plpgsql AS $$
-        BEGIN
-            IF pg_trigger_depth() > 1 THEN RETURN NEW; END IF;
-            IF NEW.valid_to IS NOT NULL THEN RETURN NEW; END IF;
-
-            UPDATE shared.employee_assignments
-               SET valid_to = NEW.valid_from
-             WHERE employee_id = NEW.employee_id
-               AND valid_to IS NULL
-               AND id <> COALESCE(NEW.id, -1);
-
-            RETURN NEW;
-        END;
-        $$;
-    """))
-
-    op.execute(sa.text("""
-        CREATE TRIGGER trg_employee_assignment_close_previous
-        BEFORE INSERT ON shared.employee_assignments
-        FOR EACH ROW
-        WHEN (NEW.valid_to IS NULL)
-        EXECUTE FUNCTION shared.fn_employee_assignment_close_previous();
-    """))
-
-
-def downgrade() -> None:
-    """Downgrade schema."""
-    op.execute(sa.text("DROP TRIGGER IF EXISTS trg_employee_assignment_close_previous ON shared.employee_assignments"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_employee_assignment_close_previous()"))
-
-    op.execute(sa.text("DROP TRIGGER IF EXISTS trg_ca_kpp_mapping_single_basic ON shared.ca_kpp_mappings"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_ca_kpp_mapping_single_basic()"))
-
-
-
 # 1. Откатить (если применена)
 alembic downgrade base
 
@@ -99,3 +28,46 @@ alembic revision --autogenerate -m "init shared"
 
 # 5. Проверить, что Alembic видит актуальную схему
 alembic -c alembic.ini check
+
+# 6. Создать новую миграцию для триггеров
+alembic -c alembic.ini revision -m "add triggers" --rev-id add_triggers
+
+Флаг --rev-id опционален, но удобно: имя ревизии становится предсказуемым, и down_revision в следующей миграции легко указать.
+
+
+# Проверка
+## накатить всё с нуля
+alembic -c alembic.ini downgrade base
+alembic -c alembic.ini upgrade head
+
+## проверить, что триггеры на месте
+python - <<'PY'
+import asyncio
+from sqlalchemy import text
+from xshared.db import engine
+
+SQL = """
+    SELECT t.tgname, c.relname
+    FROM pg_trigger t
+    JOIN pg_class c ON c.oid = t.tgrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'shared' AND NOT t.tgisinternal
+    ORDER BY t.tgname
+"""
+
+
+async def main() -> None:
+    try:
+        async with engine.connect() as conn:
+            rows = (await conn.execute(text(SQL))).all()
+        if not rows:
+            print("❌ Триггеров в shared нет")
+            return
+        for tgname, relname in rows:
+            print(f"✅ {tgname:<45} → {relname}")
+    finally:
+        await engine.dispose()
+
+
+asyncio.run(main())
+PY

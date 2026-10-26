@@ -1,8 +1,8 @@
 """init shared
 
-Revision ID: b923810ec678
-Revises:
-Create Date: 2026-10-26 17:08:37.396986+03:00
+Revision ID: 7dd5389ce924
+Revises: 
+Create Date: 2026-10-26 20:08:03.197684+03:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b923810ec678'
+revision: str = '7dd5389ce924'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -33,7 +33,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.CheckConstraint("name ~ '^[0-9]{9}$'", name=op.f('ck_kpps_ck_kpps_name_format')),
+    sa.CheckConstraint("name ~ '^[0-9]{9}$'", name=op.f('ck_kpps_name_format')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_kpps')),
     sa.UniqueConstraint('name', name=op.f('uq_kpps_name')),
     schema='shared'
@@ -126,10 +126,9 @@ def upgrade() -> None:
     op.create_table('role_permissions',
     sa.Column('role_id', sa.Integer(), nullable=False),
     sa.Column('permission_id', sa.Integer(), nullable=False),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['permission_id'], ['shared.permissions.id'], name=op.f('fk_role_permissions_permission_id_permissions'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['role_id'], ['shared.roles.id'], name=op.f('fk_role_permissions_role_id_roles'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('role_id', 'permission_id', 'id', name=op.f('pk_role_permissions')),
+    sa.PrimaryKeyConstraint('role_id', 'permission_id', name=op.f('pk_role_permissions')),
     schema='shared'
     )
     op.create_table('ca_kpp_mappings',
@@ -169,15 +168,16 @@ def upgrade() -> None:
     sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('code', sa.String(length=50), nullable=True),
-    sa.Column('description', sa.String(length=1000), nullable=True),
+    sa.Column('description', sa.String(length=100), nullable=True),
     sa.Column('parent_id', sa.Integer(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.CheckConstraint('parent_id IS NULL OR parent_id <> id', name=op.f('ck_departments_no_self_parent')),
     sa.ForeignKeyConstraint(['company_id'], ['shared.companies.id'], name=op.f('fk_departments_company_id_companies')),
     sa.ForeignKeyConstraint(['parent_id'], ['shared.departments.id'], name=op.f('fk_departments_parent_id_departments')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_departments')),
-    sa.UniqueConstraint('company_id', 'id', name='uq_departments_company_id_id'),
     sa.UniqueConstraint('company_id', 'name', name='uq_departments_company_name'),
+    sa.UniqueConstraint('company_id', name='uq_departments_company_id'),
     schema='shared'
     )
     op.create_index(op.f('ix_shared_departments_company_id'), 'departments', ['company_id'], unique=False, schema='shared')
@@ -250,127 +250,9 @@ def upgrade() -> None:
     op.create_index('uq_employee_assignments_current', 'employee_assignments', ['employee_id'], unique=True, schema='shared', postgresql_where=sa.text('valid_to IS NULL'))
     # ### end Alembic commands ###
 
-    # ============================================================
-    # Триггер 1: один основной КПП у контрагента
-    # ============================================================
-    op.execute(sa.text("""
-        CREATE OR REPLACE FUNCTION shared.fn_ca_kpp_mapping_single_basic()
-        RETURNS TRIGGER LANGUAGE plpgsql AS $$
-        BEGIN
-            IF pg_trigger_depth() > 1 THEN RETURN NEW; END IF;
-            IF NEW.is_basic IS NOT TRUE THEN RETURN NEW; END IF;
-
-            UPDATE shared.ca_kpp_mappings
-               SET is_basic = false
-             WHERE counterparty_id = NEW.counterparty_id
-               AND id <> COALESCE(NEW.id, -1)
-               AND is_basic = true;
-
-            RETURN NEW;
-        END;
-        $$;
-    """))
-
-    op.execute(sa.text("""
-        CREATE TRIGGER trg_ca_kpp_mapping_single_basic
-        BEFORE INSERT OR UPDATE OF is_basic, counterparty_id
-        ON shared.ca_kpp_mappings
-        FOR EACH ROW
-        WHEN (NEW.is_basic IS TRUE)
-        EXECUTE FUNCTION shared.fn_ca_kpp_mapping_single_basic();
-    """))
-
-    # ================================================
-    # Триггер 2: авто-закрытие предыдущей должности
-    # ================================================
-    op.execute(sa.text("""
-        CREATE OR REPLACE FUNCTION shared.fn_employee_assignment_close_previous()
-        RETURNS TRIGGER LANGUAGE plpgsql AS $$
-        BEGIN
-            IF pg_trigger_depth() > 1 THEN RETURN NEW; END IF;
-            IF NEW.valid_to IS NOT NULL THEN RETURN NEW; END IF;
-
-            UPDATE shared.employee_assignments
-               SET valid_to = NEW.valid_from
-             WHERE employee_id = NEW.employee_id
-               AND valid_to IS NULL
-               AND id <> COALESCE(NEW.id, -1);
-
-            RETURN NEW;
-        END;
-        $$;
-    """))
-
-    op.execute(sa.text("""
-        CREATE TRIGGER trg_employee_assignment_close_previous
-        BEFORE INSERT ON shared.employee_assignments
-        FOR EACH ROW
-        WHEN (NEW.valid_to IS NULL)
-        EXECUTE FUNCTION shared.fn_employee_assignment_close_previous();
-    """))
-
-    # ============================================================
-    # Триггер 3: запрет циклов в departments.parent_id
-    # ============================================================
-    op.execute(sa.text("""
-        CREATE OR REPLACE FUNCTION shared.fn_departments_prevent_cycle()
-        RETURNS TRIGGER LANGUAGE plpgsql AS $$
-        DECLARE
-            current_parent_id INTEGER;
-            visited_ids INTEGER[] := ARRAY[NEW.id];
-        BEGIN
-            -- Нет родителя — цикла быть не может
-            IF NEW.parent_id IS NULL THEN
-                RETURN NEW;
-            END IF;
-
-            current_parent_id := NEW.parent_id;
-
-            -- Идём вверх по цепочке родителей
-            WHILE current_parent_id IS NOT NULL LOOP
-                IF current_parent_id = ANY(visited_ids) THEN
-                    RAISE EXCEPTION
-                        'Циклическая ссылка в departments: id=% не может иметь предком %',
-                        NEW.id, current_parent_id
-                        USING ERRCODE = '23514';  -- check_violation
-                END IF;
-
-                visited_ids := array_append(visited_ids, current_parent_id);
-
-                SELECT parent_id INTO current_parent_id
-                FROM shared.departments
-                WHERE id = current_parent_id;
-
-                -- Родитель не найден (битые данные) — выходим
-                IF NOT FOUND THEN
-                    current_parent_id := NULL;
-                END IF;
-            END LOOP;
-
-            RETURN NEW;
-        END;
-        $$;
-    """))
-
-    op.execute(sa.text("""
-        CREATE TRIGGER trg_departments_prevent_cycle
-        BEFORE INSERT OR UPDATE OF parent_id
-        ON shared.departments
-        FOR EACH ROW
-        EXECUTE FUNCTION shared.fn_departments_prevent_cycle();
-    """))
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.execute(sa.text("DROP TRIGGER IF EXISTS trg_departments_prevent_cycle ON shared.departments"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_departments_prevent_cycle()"))
-
-    op.execute(sa.text("DROP TRIGGER IF EXISTS trg_employee_assignment_close_previous ON shared.employee_assignments"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_employee_assignment_close_previous()"))
-
-    op.execute(sa.text("DROP TRIGGER IF EXISTS trg_ca_kpp_mapping_single_basic ON shared.ca_kpp_mappings"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_ca_kpp_mapping_single_basic()"))
-
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_index('uq_employee_assignments_current', table_name='employee_assignments', schema='shared', postgresql_where=sa.text('valid_to IS NULL'))
     op.drop_index(op.f('ix_shared_employee_assignments_employee_id'), table_name='employee_assignments', schema='shared')
