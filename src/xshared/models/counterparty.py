@@ -27,13 +27,14 @@ class Counterparty(EntityBase):
     inn: Mapped[str | None] = mapped_column(String(12), unique=True)
     opf_short: Mapped[str | None] = mapped_column(String(10))
     name_full_with_opf: Mapped[str | None] = mapped_column(String(300))
+
+    status: Mapped[str | None] = mapped_column(String(20))
     counterparty_type: Mapped[str | None] = mapped_column(String(20))
+    branch_type: Mapped[str | None] = mapped_column(String(20))
 
     group_id: Mapped[int | None] = mapped_column(
         ForeignKey("shared.counterparty_groups.id")
     )
-
-    branch_type: Mapped[str | None] = mapped_column(String(20))
 
     ogrn: Mapped[str | None] = mapped_column(String(20))
     ogrn_date: Mapped[datetime | None] = mapped_column(DateTime)

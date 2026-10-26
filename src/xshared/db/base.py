@@ -1,8 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import (
-    CheckConstraint, MetaData, String, false,
-)
+from sqlalchemy import MetaData, String, false
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from xshared.db.mixins import IdMixin, TimestampMixin
@@ -42,15 +40,8 @@ class SupplementaryBase(BaseWithPK):
 
 class EntityBase(TimestampedBase):
     __abstract__ = True
-    __table_args__ = (
-        CheckConstraint(
-            "status IS NULL OR status IN ('ACTIVE','LIQUIDATING','LIQUIDATED','BANKRUPT','REORGANIZING')",
-            name="ck_%(table_name)s_status",
-        ),
-    )
 
     address: Mapped[str | None] = mapped_column(String(200))
-    status: Mapped[str | None] = mapped_column(String(20))  # код EntityStatus
     actuality_date: Mapped[datetime | None]
     registration_date: Mapped[datetime | None]
     liquidation_date: Mapped[datetime | None]

@@ -1,4 +1,10 @@
-from xshared.db.base import BaseWithPK, EntityBase, SupplementaryBase, TimestampedBase, SharedBase
+from xshared.db.base import (
+    BaseWithPK,
+    EntityBase,
+    SupplementaryBase,
+    TimestampedBase,
+    SharedBase,
+)
 from xshared.db._enums import (
     CounterpartyBranch, CounterpartyType, EntityStatus,
 )
