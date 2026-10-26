@@ -13,10 +13,7 @@ from xshared.db.session import build_connect_args
 
 import xshared.models  # noqa: F401
 
-
-
 config = context.config
-
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
