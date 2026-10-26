@@ -50,15 +50,12 @@ def create_engine(
     )
 
 
-# Глобальный engine для библиотеки.
-# Приложения (billing/payments) могут использовать его или создавать свой.
 engine: AsyncEngine = create_engine(
     pool_size=settings.db_pool_size,
     max_overflow=settings.db_max_overflow,
     echo=settings.db_echo,
 )
 
-# Фабрика сессий.
 SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,

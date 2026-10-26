@@ -3,8 +3,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import EntityBase
-from xshared.db._enums import EntityStatus, CounterpartyType, CounterpartyBranch
+from xshared.db import EntityBase, EntityStatus, CounterpartyType, CounterpartyBranch
 
 
 class Counterparty(EntityBase):
