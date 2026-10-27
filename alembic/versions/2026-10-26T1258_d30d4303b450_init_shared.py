@@ -1,8 +1,8 @@
 """init shared
 
-Revision ID: 2e752d01e250
-Revises: 
-Create Date: 2026-10-27 11:36:59.930094+03:00
+Revision ID: d30d4303b450
+Revises:
+Create Date: 2026-10-26 12:58:13.205347+03:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '2e752d01e250'
+revision: str = 'd30d4303b450'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -30,7 +30,6 @@ def upgrade() -> None:
     )
     op.create_table('kpps',
     sa.Column('name', sa.String(length=9), nullable=False),
-    sa.Column('description', sa.String(length=100), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.CheckConstraint("name ~ '^[0-9]{9}$'", name=op.f('ck_kpps_name_format')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_kpps')),

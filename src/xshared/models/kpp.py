@@ -11,7 +11,6 @@ class KPP(BaseWithPK):
     )
 
     name: Mapped[str] = mapped_column(String(9), unique=True)
-    description: Mapped[str | None] = mapped_column(String(100))
 
     ca_list: Mapped[list["KppCaMapping"]] = relationship(back_populates="kpp")
 

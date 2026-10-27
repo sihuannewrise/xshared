@@ -29,7 +29,7 @@ alembic revision --autogenerate -m "init shared"
 alembic -c alembic.ini check
 
 # 6. Создать новую миграцию для триггеров
-alembic -c alembic.ini revision -m "add triggers" --rev-id add_triggers
+alembic -c alembic.ini revision --rev-id add_triggers
 
 Флаг --rev-id опционален, но удобно: имя ревизии становится предсказуемым, и down_revision в следующей миграции легко указать.
 
@@ -95,3 +95,6 @@ async def main():
 
 asyncio.run(main())
 "
+
+# Миграция seed_kpp
+alembic revision --rev-id seed_data
