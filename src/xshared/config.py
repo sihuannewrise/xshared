@@ -8,15 +8,18 @@ class SharedSettings(BaseSettings):
         extra="ignore",
     )
 
-    # --- БД ---
-    database_url: str = "postgresql+asyncpg://knhdb2:knhdb2@db.knh.cloud:443/knhdb2"
-    db_ssl_enabled: bool = True
-    db_ssl_ca_path: str | None = None
+    # --- DB ---
+    database_url: str
+    db_ssl_enabled: bool
 
-    # --- Пул соединений ---
-    db_pool_size: int = 5
-    db_max_overflow: int = 10
-    db_echo: bool = False
+    # --- Connections pool ---
+    db_pool_size: int
+    db_max_overflow: int
+    db_echo: bool
+
+    # --- Dadata creds ---
+    dd_token: str
+    dd_secret: str
 
 
 settings = SharedSettings()

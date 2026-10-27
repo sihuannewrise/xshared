@@ -18,9 +18,6 @@ def build_ssl_context() -> ssl.SSLContext | None:
     if not settings.db_ssl_enabled:
         return None
 
-    if settings.db_ssl_ca_path:
-        return ssl.create_default_context(cafile=settings.db_ssl_ca_path)
-
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE

@@ -71,3 +71,28 @@ async def main() -> None:
 
 asyncio.run(main())
 PY
+
+
+# 7. Проверить, что Pydantic читает .env
+
+python -c "
+from xshared.config import settings
+print('DATABASE_URL:', settings.database_url)
+print('DB_SSL_ENABLED:', settings.db_ssl_enabled)
+print('DB_POOL_SIZE:', settings.db_pool_size)
+"
+
+Подключение работает
+
+python -c "
+import asyncio
+from sqlalchemy import text
+from xshared.db import engine
+
+async def main():
+    async with engine.connect() as conn:
+        print((await conn.execute(text('SELECT version()'))).scalar())
+    await engine.dispose()
+
+asyncio.run(main())
+"
