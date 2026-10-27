@@ -1,5 +1,4 @@
 # xshared
-shared DB for other services
 
 # 1. Откатить (если применена)
 alembic downgrade base

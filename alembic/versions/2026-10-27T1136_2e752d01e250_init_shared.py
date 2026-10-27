@@ -1,8 +1,8 @@
 """init shared
 
-Revision ID: 7dd5389ce924
+Revision ID: 2e752d01e250
 Revises: 
-Create Date: 2026-10-26 20:08:03.197684+03:00
+Create Date: 2026-10-27 11:36:59.930094+03:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '7dd5389ce924'
+revision: str = '2e752d01e250'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -30,9 +30,8 @@ def upgrade() -> None:
     )
     op.create_table('kpps',
     sa.Column('name', sa.String(length=9), nullable=False),
+    sa.Column('description', sa.String(length=100), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("name ~ '^[0-9]{9}$'", name=op.f('ck_kpps_name_format')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_kpps')),
     sa.UniqueConstraint('name', name=op.f('uq_kpps_name')),
@@ -131,25 +130,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('role_id', 'permission_id', name=op.f('pk_role_permissions')),
     schema='shared'
     )
-    op.create_table('ca_kpp_mappings',
-    sa.Column('counterparty_id', sa.Integer(), nullable=False),
-    sa.Column('kpp_id', sa.Integer(), nullable=False),
-    sa.Column('is_basic', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('valid_from', sa.DateTime(), nullable=True),
-    sa.Column('valid_till', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.CheckConstraint('valid_till IS NULL OR valid_from IS NULL OR valid_till >= valid_from', name=op.f('ck_ca_kpp_mappings_period')),
-    sa.ForeignKeyConstraint(['counterparty_id'], ['shared.counterparties.id'], name=op.f('fk_ca_kpp_mappings_counterparty_id_counterparties'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['kpp_id'], ['shared.kpps.id'], name=op.f('fk_ca_kpp_mappings_kpp_id_kpps'), ondelete='RESTRICT'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_ca_kpp_mappings')),
-    sa.UniqueConstraint('counterparty_id', 'kpp_id', name='uq_ca_kpp_mapping'),
-    schema='shared'
-    )
-    op.create_index(op.f('ix_shared_ca_kpp_mappings_counterparty_id'), 'ca_kpp_mappings', ['counterparty_id'], unique=False, schema='shared')
-    op.create_index(op.f('ix_shared_ca_kpp_mappings_kpp_id'), 'ca_kpp_mappings', ['kpp_id'], unique=False, schema='shared')
-    op.create_index('uq_ca_kpp_mapping_basic', 'ca_kpp_mappings', ['counterparty_id'], unique=True, schema='shared', postgresql_where=sa.text('is_basic = true'))
     op.create_table('companies',
     sa.Column('counterparty_id', sa.Integer(), nullable=False),
     sa.Column('short_name', sa.String(length=50), nullable=False),
@@ -164,6 +144,25 @@ def upgrade() -> None:
     sa.UniqueConstraint('counterparty_id', name=op.f('uq_companies_counterparty_id')),
     schema='shared'
     )
+    op.create_table('kpp_ca_mappings',
+    sa.Column('counterparty_id', sa.Integer(), nullable=False),
+    sa.Column('kpp_id', sa.Integer(), nullable=False),
+    sa.Column('is_basic', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('valid_from', sa.DateTime(), nullable=True),
+    sa.Column('valid_till', sa.DateTime(), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint('valid_till IS NULL OR valid_from IS NULL OR valid_till >= valid_from', name=op.f('ck_kpp_ca_mappings_period')),
+    sa.ForeignKeyConstraint(['counterparty_id'], ['shared.counterparties.id'], name=op.f('fk_kpp_ca_mappings_counterparty_id_counterparties'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['kpp_id'], ['shared.kpps.id'], name=op.f('fk_kpp_ca_mappings_kpp_id_kpps'), ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_kpp_ca_mappings')),
+    sa.UniqueConstraint('counterparty_id', 'kpp_id', name='uq_kpp_ca_mapping'),
+    schema='shared'
+    )
+    op.create_index(op.f('ix_shared_kpp_ca_mappings_counterparty_id'), 'kpp_ca_mappings', ['counterparty_id'], unique=False, schema='shared')
+    op.create_index(op.f('ix_shared_kpp_ca_mappings_kpp_id'), 'kpp_ca_mappings', ['kpp_id'], unique=False, schema='shared')
+    op.create_index('uq_kpp_ca_mapping_basic', 'kpp_ca_mappings', ['counterparty_id'], unique=True, schema='shared', postgresql_where=sa.text('is_basic = true'))
     op.create_table('departments',
     sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
@@ -269,11 +268,11 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_shared_departments_parent_id'), table_name='departments', schema='shared')
     op.drop_index(op.f('ix_shared_departments_company_id'), table_name='departments', schema='shared')
     op.drop_table('departments', schema='shared')
+    op.drop_index('uq_kpp_ca_mapping_basic', table_name='kpp_ca_mappings', schema='shared', postgresql_where=sa.text('is_basic = true'))
+    op.drop_index(op.f('ix_shared_kpp_ca_mappings_kpp_id'), table_name='kpp_ca_mappings', schema='shared')
+    op.drop_index(op.f('ix_shared_kpp_ca_mappings_counterparty_id'), table_name='kpp_ca_mappings', schema='shared')
+    op.drop_table('kpp_ca_mappings', schema='shared')
     op.drop_table('companies', schema='shared')
-    op.drop_index('uq_ca_kpp_mapping_basic', table_name='ca_kpp_mappings', schema='shared', postgresql_where=sa.text('is_basic = true'))
-    op.drop_index(op.f('ix_shared_ca_kpp_mappings_kpp_id'), table_name='ca_kpp_mappings', schema='shared')
-    op.drop_index(op.f('ix_shared_ca_kpp_mappings_counterparty_id'), table_name='ca_kpp_mappings', schema='shared')
-    op.drop_table('ca_kpp_mappings', schema='shared')
     op.drop_table('role_permissions', schema='shared')
     op.drop_index(op.f('ix_shared_counterparties_name'), table_name='counterparties', schema='shared')
     op.drop_table('counterparties', schema='shared')

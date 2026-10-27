@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from xshared.db import TimestampedBase
 
 
-class CaKppMapping(TimestampedBase):
+class KppCaMapping(TimestampedBase):
     """
     Связь контрагента с КПП.
 
@@ -17,15 +17,15 @@ class CaKppMapping(TimestampedBase):
     Один КПП — основной (is_basic = true), остальные — дополнительные.
     Период действия: valid_from / valid_till (null = бессрочно).
     """
-    __tablename__ = "ca_kpp_mappings"
+    __tablename__ = "kpp_ca_mappings"
     __table_args__ = (
-        UniqueConstraint("counterparty_id", "kpp_id", name="uq_ca_kpp_mapping"),
+        UniqueConstraint("counterparty_id", "kpp_id", name="uq_kpp_ca_mapping"),
         CheckConstraint(
             "valid_till IS NULL OR valid_from IS NULL OR valid_till >= valid_from",
             name="period",
         ),
         Index(
-            "uq_ca_kpp_mapping_basic",
+            "uq_kpp_ca_mapping_basic",
             "counterparty_id",
             unique=True,
             postgresql_where=text("is_basic = true"),
@@ -54,4 +54,4 @@ class CaKppMapping(TimestampedBase):
     kpp: Mapped["KPP"] = relationship(back_populates="ca_list")
 
     def __repr__(self) -> str:
-        return f"<CaKppMapping (ca={self.counterparty_id}, kpp={self.kpp_id})>"
+        return f"<KppCaMapping (ca={self.counterparty_id}, kpp={self.kpp_id})>"

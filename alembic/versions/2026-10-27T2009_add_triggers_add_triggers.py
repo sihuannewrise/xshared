@@ -1,8 +1,8 @@
 """add triggers
 
 Revision ID: add_triggers
-Revises: 7dd5389ce924
-Create Date: 2026-10-26 20:09:03.104892+03:00
+Revises: 2e752d01e250
+Create Date: 2026-10-27 20:09:03.104892+03:00
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'add_triggers'
-down_revision: Union[str, Sequence[str], None] = '7dd5389ce924'
+down_revision: Union[str, Sequence[str], None] = '2e752d01e250'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -23,13 +23,13 @@ def upgrade() -> None:
     # Триггер 1: один основной КПП у контрагента
     # ============================================================
     op.execute(sa.text("""
-        CREATE OR REPLACE FUNCTION shared.fn_ca_kpp_mapping_single_basic()
+        CREATE OR REPLACE FUNCTION shared.fn_kpp_ca_mapping_single_basic()
         RETURNS TRIGGER LANGUAGE plpgsql AS $$
         BEGIN
             IF pg_trigger_depth() > 1 THEN RETURN NEW; END IF;
             IF NEW.is_basic IS NOT TRUE THEN RETURN NEW; END IF;
 
-            UPDATE shared.ca_kpp_mappings
+            UPDATE shared.kpp_ca_mappings
                SET is_basic = false
              WHERE counterparty_id = NEW.counterparty_id
                AND id <> COALESCE(NEW.id, -1)
@@ -41,12 +41,12 @@ def upgrade() -> None:
     """))
 
     op.execute(sa.text("""
-        CREATE TRIGGER trg_ca_kpp_mapping_single_basic
+        CREATE TRIGGER trg_kpp_ca_mapping_single_basic
         BEFORE INSERT OR UPDATE OF is_basic, counterparty_id
-        ON shared.ca_kpp_mappings
+        ON shared.kpp_ca_mappings
         FOR EACH ROW
         WHEN (NEW.is_basic IS TRUE)
-        EXECUTE FUNCTION shared.fn_ca_kpp_mapping_single_basic();
+        EXECUTE FUNCTION shared.fn_kpp_ca_mapping_single_basic();
     """))
 
     # ================================================
@@ -137,6 +137,6 @@ def downgrade() -> None:
     op.execute(sa.text("DROP TRIGGER IF EXISTS trg_employee_assignment_close_previous ON shared.employee_assignments"))
     op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_employee_assignment_close_previous()"))
 
-    op.execute(sa.text("DROP TRIGGER IF EXISTS trg_ca_kpp_mapping_single_basic ON shared.ca_kpp_mappings"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_ca_kpp_mapping_single_basic()"))
+    op.execute(sa.text("DROP TRIGGER IF EXISTS trg_ca_kpp_mapping_single_basic ON shared.kpp_ca_mappings"))
+    op.execute(sa.text("DROP FUNCTION IF EXISTS shared.fn_kpp_ca_mapping_single_basic()"))
 

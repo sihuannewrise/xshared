@@ -1,4 +1,4 @@
-from xshared.models.ca_kpp_mapping import CaKppMapping
+from xshared.models.kpp_ca_mapping import KppCaMapping
 from xshared.models.company import Company
 from xshared.models.counterparty_group import CounterpartyGroup
 from xshared.models.counterparty import Counterparty
@@ -13,7 +13,7 @@ from xshared.models.roles import (
 )
 
 __all__ = [
-    "KPP", "CaKppMapping",
+    "KPP", "KppCaMapping",
     "Counterparty", "CounterpartyGroup", "Company",
     "Person", "User", "Employee", "EmployeeAssignment", "Department",
     "Role", "Permission", "RolePermission", "UserCompanyRole",
