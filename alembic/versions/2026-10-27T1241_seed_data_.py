@@ -17,21 +17,28 @@ def upgrade() -> None:
     # seed kpp
     kpp_list = json.loads((DATA_DIR / "kpp_list.json").read_text(encoding="utf-8"))
 
-    kpps_table = sa.table(
-        "kpps",
-        sa.column("name", sa.String(9)),
-        schema="shared",
+    op.execute(
+        sa.text("""
+            INSERT INTO shared.kpps (name)
+            SELECT unnest(:names::text[])
+            ON CONFLICT (name) DO NOTHING
+        """),
     )
-    op.bulk_insert(
-        kpps_table,
-        [{"name": k} for k in sorted(kpp_list)],
-    )
+    # kpps_table = sa.table(
+    #     "kpps",
+    #     sa.column("name", sa.String(9)),
+    #     schema="shared",
+    # )
+    # op.bulk_insert(
+    #     kpps_table,
+    #     [{"name": k} for k in sorted(kpp_list)],
+    # )
 
 
 def downgrade() -> None:
-    op.execute(sa.text("DELETE FROM shared.kpps"))
-    # kpp_list = json.loads((DATA_DIR / "kpp_list.json").read_text(encoding="utf-8"))
-    # op.execute(
-    #     sa.text("DELETE FROM shared.kpps WHERE name = ANY(:names)"),
-    #     {"names": kpp_list},
-    # )
+    # op.execute(sa.text("DELETE FROM shared.kpps"))
+    kpp_list = json.loads((DATA_DIR / "kpp_list.json").read_text(encoding="utf-8"))
+    op.execute(
+        sa.text("DELETE FROM shared.kpps WHERE name = ANY(:names)"),
+        {"names": kpp_list},
+    )

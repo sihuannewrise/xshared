@@ -19,3 +19,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 xshared = ["py.typed"]
+
+[project.scripts]
+xshared = "xshared.cli.main:app"
