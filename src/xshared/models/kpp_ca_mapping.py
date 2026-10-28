@@ -6,10 +6,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import TimestampedBase
+from xshared.db import BaseWithPK
 
 
-class KppCaMapping(TimestampedBase):
+class KppCaMapping(BaseWithPK):
     """
     Связь контрагента с КПП.
 

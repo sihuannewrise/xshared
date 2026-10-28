@@ -27,17 +27,6 @@ class TimestampedBase(BaseWithPK, TimestampMixin):
     __abstract__ = True
 
 
-class SupplementaryBase(BaseWithPK):
-    __abstract__ = True
-    name: Mapped[str] = mapped_column(String(50), unique=True)
-
-    def __repr__(self) -> str:
-        description = getattr(self, "description", None)
-        if description is not None:
-            return f"<{type(self).__name__} ({self.name}-{description})>"
-        return f"<{type(self).__name__} ({self.name})>"
-
-
 class EntityBase(TimestampedBase):
     __abstract__ = True
 

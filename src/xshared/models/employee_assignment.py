@@ -5,10 +5,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import TimestampedBase
+from xshared.db import BaseWithPK
 
 
-class EmployeeAssignment(TimestampedBase):
+class EmployeeAssignment(BaseWithPK):
     """
     Период работы в должности/отделе.
     Одна запись = одна «версия» условий труда.

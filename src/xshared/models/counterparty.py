@@ -46,10 +46,6 @@ class Counterparty(EntityBase):
         ),
     )
 
-    group_id: Mapped[int | None] = mapped_column(
-        ForeignKey("shared.counterparty_groups.id")
-    )
-
     ogrn: Mapped[str | None] = mapped_column(String(20))
     ogrn_date: Mapped[datetime | None] = mapped_column(DateTime)
 
@@ -64,9 +60,6 @@ class Counterparty(EntityBase):
 
     kpp_list: Mapped[list["CaKppMapping"]] = relationship(
         back_populates='counterparty'
-    )
-    counterpartygroup: Mapped["CounterpartyGroup | None"] = relationship(
-        back_populates="ca_list"
     )
     company: Mapped["Company | None"] = relationship(
         back_populates="counterparty",
