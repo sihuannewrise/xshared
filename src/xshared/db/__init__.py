@@ -1,7 +1,7 @@
 from xshared.db.base import (
     SharedBase,
     BaseWithPK,
-    BaseIsAcive,
+    BaseIsActive,
     TimestampedBase,
     AuditBase,
     EntityBase,
@@ -19,7 +19,7 @@ from xshared.db.session import (
 __all__ = [
     "SharedBase",
     "BaseWithPK",
-    "BaseIsAcive",
+    "BaseIsActive",
     "TimestampedBase",
     "AuditBase",
     "EntityBase",

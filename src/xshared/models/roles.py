@@ -3,10 +3,10 @@ from datetime import datetime
 from sqlalchemy import (ForeignKey, String, UniqueConstraint, func,)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import BaseIsAcive, SharedBase
+from xshared.db import BaseIsActive, SharedBase
 
 
-class Role(BaseIsAcive):
+class Role(BaseIsActive):
     __tablename__ = "roles"
 
     code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
@@ -21,7 +21,7 @@ class Role(BaseIsAcive):
     )
 
 
-class Permission(BaseIsAcive):
+class Permission(BaseIsActive):
     __tablename__ = "permissions"
 
     code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
@@ -46,7 +46,7 @@ class RolePermission(SharedBase):
     permission: Mapped["Permission"] = relationship(back_populates="role_permissions")
 
 
-class UserCompanyRole(BaseIsAcive):
+class UserCompanyRole(BaseIsActive):
     __tablename__ = "user_company_roles"
     __table_args__ = (
         UniqueConstraint("user_id", "company_id", name="uq_user_company_role"),

@@ -1,10 +1,10 @@
 from sqlalchemy import CheckConstraint, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import BaseIsAcive
+from xshared.db import BaseIsActive
 
 
-class Department(BaseIsAcive):
+class Department(BaseIsActive):
     __tablename__ = "departments"
     __table_args__ = (
         UniqueConstraint("company_id", "name", name="uq_departments_company_name"),
