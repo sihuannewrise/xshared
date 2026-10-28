@@ -51,7 +51,7 @@ class KppCaMapping(BaseWithPK):
     valid_till: Mapped[datetime | None] = mapped_column(DateTime)
 
     counterparty: Mapped["Counterparty"] = relationship(back_populates="kpp_list")
-    kpp: Mapped["KPP"] = relationship(back_populates="kpp_list")
+    kpp: Mapped["KPP"] = relationship(back_populates="ca_list")
 
     def __repr__(self) -> str:
         return f"<KppCaMapping (ca={self.counterparty_id}, kpp={self.kpp_id})>"

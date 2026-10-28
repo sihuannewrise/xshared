@@ -21,9 +21,9 @@ class Person(AuditBase):
         ),
     )
 
-    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    first_name: Mapped[str] = mapped_column(String(100))
     patronymic_name: Mapped[str | None] = mapped_column(String(100))
-    last_name: Mapped[str | None] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str | None] = mapped_column(String(100))
 
     birthdate: Mapped[date | None] = mapped_column(Date)
     social_no: Mapped[str | None] = mapped_column(String(20), unique=True)

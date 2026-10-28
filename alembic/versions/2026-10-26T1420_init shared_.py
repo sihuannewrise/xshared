@@ -5,7 +5,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'init_shared'
+revision: str = 'init shared'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -110,7 +110,7 @@ def upgrade() -> None:
     op.create_table('persons',
     sa.Column('first_name', sa.String(length=100), nullable=False),
     sa.Column('patronymic_name', sa.String(length=100), nullable=True),
-    sa.Column('last_name', sa.String(length=100), nullable=False),
+    sa.Column('last_name', sa.String(length=100), nullable=True),
     sa.Column('birthdate', sa.Date(), nullable=True),
     sa.Column('social_no', sa.String(length=20), nullable=True),
     sa.Column('created_by', sa.Integer(), nullable=True),
@@ -194,12 +194,12 @@ def upgrade() -> None:
     sa.Column('personnel_no', sa.String(length=10), nullable=True),
     sa.Column('hired_at', sa.Date(), nullable=True),
     sa.Column('fired_at', sa.Date(), nullable=True),
-    sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
     sa.Column('created_by', sa.Integer(), nullable=True),
     sa.Column('updated_by', sa.Integer(), nullable=True),
     sa.Column('deleted_by', sa.Integer(), nullable=True),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint('fired_at IS NULL OR hired_at IS NULL OR fired_at >= hired_at', name=op.f('ck_employees_period')),

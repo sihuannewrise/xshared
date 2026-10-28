@@ -38,9 +38,6 @@ class Employee(AuditBase):
 
     hired_at: Mapped[date | None] = mapped_column(Date)
     fired_at: Mapped[date | None] = mapped_column(Date)
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, server_default=true(), nullable=False
-    )
 
     person: Mapped["Person"] = relationship(back_populates="employees", lazy="selectin")
     company: Mapped["Company"] = relationship(back_populates="employees", lazy="selectin")
