@@ -41,7 +41,6 @@ class EmployeeAssignment(TimestampedBase):
     valid_to: Mapped[date | None] = mapped_column(Date)   # NULL = current
 
     reason: Mapped[str | None] = mapped_column(String(100))
-    changed_by: Mapped[int | None] = mapped_column(ForeignKey("shared.users.id"))
 
     employee: Mapped["Employee"] = relationship(back_populates="assignments")
     department: Mapped["Department | None"] = relationship(

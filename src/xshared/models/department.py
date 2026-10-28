@@ -8,7 +8,7 @@ class Department(BaseWithPK):
     __tablename__ = "departments"
     __table_args__ = (
         UniqueConstraint("company_id", "name", name="uq_departments_company_name"),
-        UniqueConstraint("company_id", name="uq_departments_company_id"),
+        UniqueConstraint("company_id", "id", name="uq_departments_company_id_id"),
         CheckConstraint("parent_id IS NULL OR parent_id <> id", name="no_self_parent"),
     )
 

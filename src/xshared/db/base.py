@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import MetaData, String, false
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from xshared.db.mixins import IdMixin, TimestampMixin
+from xshared.db._mixins import IdMixin, TimestampMixin, AuditMixin, SoftDeleteMixin
 
 
 NAMING_CONVENTION = {

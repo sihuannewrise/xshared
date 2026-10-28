@@ -1,10 +1,10 @@
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import TimestampedBase
+from xshared.db import BaseWithPK
 
 
-class Company(TimestampedBase):
+class Company(BaseWithPK):
     __tablename__ = "companies"
 
     counterparty_id: Mapped[int] = mapped_column(

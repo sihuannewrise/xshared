@@ -13,8 +13,6 @@ class Role(BaseWithPK):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str | None] = mapped_column(String(255))
 
-    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-
     role_permissions: Mapped[list["RolePermission"]] = relationship(
         back_populates="role", cascade="all, delete-orphan"
     )
@@ -28,8 +26,6 @@ class Permission(BaseWithPK):
 
     code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(String(255))
-
-    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     role_permissions: Mapped[list["RolePermission"]] = relationship(
         back_populates="permission", cascade="all, delete-orphan"
@@ -65,9 +61,6 @@ class UserCompanyRole(BaseWithPK):
     role_id: Mapped[int] = mapped_column(
         ForeignKey("shared.roles.id", ondelete="RESTRICT"), nullable=False, index=True
     )
-
-    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    created_by: Mapped[int | None] = mapped_column(ForeignKey("shared.users.id"))
 
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
     company: Mapped["Company"] = relationship()
