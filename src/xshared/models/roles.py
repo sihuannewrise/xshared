@@ -65,4 +65,3 @@ class UserCompanyRole(BaseIsAcive):
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
     company: Mapped["Company"] = relationship()
     role: Mapped["Role"] = relationship(back_populates="user_company_roles")
-    created_by_user: Mapped["User | None"] = relationship(foreign_keys=[created_by])

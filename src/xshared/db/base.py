@@ -23,11 +23,11 @@ class BaseWithPK(IdMixin, SharedBase):
     __abstract__ = True
 
 
-class BaseIsAcive(BaseWithPK, IsActiveMixin):
+class BaseIsActive(BaseWithPK, IsActiveMixin):
     __abstract__ = True
 
 
-class TimestampedBase(BaseIsAcive, TimestampMixin):
+class TimestampedBase(BaseIsActive, TimestampMixin):
     __abstract__ = True
 
 

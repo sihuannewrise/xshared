@@ -22,7 +22,7 @@ asyncio.run(main())
 "
 
 # 4. Создать новую пустую миграцию
-alembic revision --autogenerate -m "init shared"
+alembic revision --autogenerate --rev-id "init shared"
 
 
 # 5. Проверить, что Alembic видит актуальную схему
