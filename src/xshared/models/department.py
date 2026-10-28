@@ -1,10 +1,10 @@
 from sqlalchemy import CheckConstraint, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import BaseWithPK
+from xshared.db import BaseIsAcive
 
 
-class Department(BaseWithPK):
+class Department(BaseIsAcive):
     __tablename__ = "departments"
     __table_args__ = (
         UniqueConstraint("company_id", "name", name="uq_departments_company_name"),
@@ -21,7 +21,6 @@ class Department(BaseWithPK):
     parent_id: Mapped[int | None] = mapped_column(
         ForeignKey("shared.departments.id"), index=True
     )
-    is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
 
     parent: Mapped[Department | None] = relationship(
         remote_side="Department.id", back_populates="children"

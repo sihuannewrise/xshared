@@ -1,11 +1,15 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, func
+from sqlalchemy import ForeignKey, func, true
 from sqlalchemy.orm import Mapped, mapped_column, declared_attr
 
 
 class IdMixin:
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+
+class IsActiveMixin:
+    is_active: Mapped[bool] = mapped_column(server_default=true())
 
 
 class TimestampMixin:
@@ -32,5 +36,5 @@ class AuditMixin:
         )
 
 class SoftDeleteMixin:
-    deleted_at: Mapped[datetime | None] = mapped_column()
     deleted_by: Mapped[int | None] = mapped_column(ForeignKey("shared.users.id", ondelete="SET NULL"))
+    deleted_at: Mapped[datetime | None] = mapped_column()

@@ -5,10 +5,10 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import func
 
-from xshared.db import TimestampedBase
+from xshared.db import AuditBase
 
 
-class Person(TimestampedBase):
+class Person(AuditBase):
     """
     Физическое лицо. Может быть трудоустроено в нескольких обществах
     (через employees) и/или иметь учётную запись (через employees.user_id).
@@ -27,9 +27,6 @@ class Person(TimestampedBase):
 
     birthdate: Mapped[date | None] = mapped_column(Date)
     social_no: Mapped[str | None] = mapped_column(String(20), unique=True)
-
-    email: Mapped[str | None] = mapped_column(String(150))
-    phone: Mapped[str | None] = mapped_column(String(20))
 
     employees: Mapped[list["Employee"]] = relationship(
         back_populates="person", lazy="selectin"

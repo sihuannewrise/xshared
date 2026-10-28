@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import MetaData, String, false
+from sqlalchemy import MetaData, String, true
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from xshared.db._mixins import IdMixin, TimestampMixin, AuditMixin, SoftDeleteMixin
+from xshared.db._mixins import IdMixin, TimestampMixin, AuditMixin, SoftDeleteMixin, IsActiveMixin
 
 
 NAMING_CONVENTION = {
@@ -23,20 +23,25 @@ class BaseWithPK(IdMixin, SharedBase):
     __abstract__ = True
 
 
-class TimestampedBase(BaseWithPK, TimestampMixin):
+class BaseIsAcive(BaseWithPK, IsActiveMixin):
     __abstract__ = True
 
 
-class EntityBase(TimestampedBase):
+class TimestampedBase(BaseIsAcive, TimestampMixin):
+    __abstract__ = True
+
+
+class AuditBase(AuditMixin, SoftDeleteMixin, TimestampedBase):
+    __abstract__ = True
+
+
+class EntityBase(AuditBase):
     __abstract__ = True
 
     address: Mapped[str | None] = mapped_column(String(200))
     actuality_date: Mapped[datetime | None]
     registration_date: Mapped[datetime | None]
     liquidation_date: Mapped[datetime | None]
-    is_archived: Mapped[bool] = mapped_column(
-        server_default=false(), nullable=False
-    )
 
     def __repr__(self) -> str:
         name = getattr(self, "name", None)

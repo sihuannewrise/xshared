@@ -7,10 +7,10 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.ext.associationproxy import association_proxy
 
-from xshared.db import TimestampedBase
+from xshared.db import AuditBase
 
 
-class Employee(TimestampedBase):
+class Employee(AuditBase):
     __tablename__ = "employees"
     __table_args__ = (
         UniqueConstraint("company_id", "id", name="uq_employees_company_id_id"),
@@ -35,7 +35,6 @@ class Employee(TimestampedBase):
     )
 
     personnel_no: Mapped[str | None] = mapped_column(String(10))
-    social_no: Mapped[str | None] = mapped_column(String(20), unique=True)
 
     hired_at: Mapped[date | None] = mapped_column(Date)
     fired_at: Mapped[date | None] = mapped_column(Date)

@@ -1,9 +1,10 @@
 from xshared.db.base import (
-    BaseWithPK,
-    EntityBase,
-    SupplementaryBase,
-    TimestampedBase,
     SharedBase,
+    BaseWithPK,
+    BaseIsAcive,
+    TimestampedBase,
+    AuditBase,
+    EntityBase,
 )
 from xshared.db._enums import (
     CounterpartyBranch, CounterpartyType, EntityStatus,
@@ -16,11 +17,12 @@ from xshared.db.session import (
 )
 
 __all__ = [
-    "BaseWithPK",
-    "EntityBase",
-    "TimestampedBase",
-    "SupplementaryBase",
     "SharedBase",
+    "BaseWithPK",
+    "BaseIsAcive",
+    "TimestampedBase",
+    "AuditBase",
+    "EntityBase",
 
     "CounterpartyBranch",
     "CounterpartyType",
