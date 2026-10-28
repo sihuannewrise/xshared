@@ -98,3 +98,30 @@ asyncio.run(main())
 
 # Миграция seed_kpp
 alembic revision --rev-id seed_data
+
+После успешного seed — проверьте:
+
+python -c "
+import asyncio
+from sqlalchemy import text
+from xshared.db import engine
+
+async def main():
+    async with engine.connect() as conn:
+        r = await conn.execute(text('SELECT count(*) FROM shared.kpps'))
+        print('kpps:', r.scalar())
+    await engine.dispose()
+
+asyncio.run(main())
+"
+
+кол-во уникальных
+
+python -c "
+import json
+from pathlib import Path
+
+data = json.loads(Path('src/xshared/seed/data/kpp_list.json').read_text(encoding='utf-8'))
+print('in JSON:', len(data))
+print('unique:', len(set(data)))
+"

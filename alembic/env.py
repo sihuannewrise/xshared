@@ -49,33 +49,18 @@ def run_migrations_offline() -> None:
 
 def do_run_migrations(connection: Connection) -> None:
     connection.execute(text("CREATE SCHEMA IF NOT EXISTS shared"))
-
-    locked = connection.execute(
-        text("SELECT pg_try_advisory_lock(:key)"), {"key": ADVISORY_LOCK_KEY}
-    ).scalar()
-    if not locked:
-        raise RuntimeError(
-            f"Не удалось захватить advisory lock {ADVISORY_LOCK_KEY}: "
-            "другая миграция уже выполняется"
-        )
-
-    try:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            include_schemas=True,
-            include_object=include_object,
-            version_table="alembic_version_shared",
-            version_table_schema="shared",
-            compare_type=True,
-            compare_server_default=True,
-        )
-        with context.begin_transaction():
-            context.run_migrations()
-    finally:
-        connection.execute(
-            text("SELECT pg_advisory_unlock(:key)"), {"key": ADVISORY_LOCK_KEY}
-        )
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_schemas=True,
+        include_object=include_object,
+        version_table="alembic_version_shared",
+        version_table_schema="shared",
+        compare_type=True,
+        compare_server_default=True,
+    )
+    with context.begin_transaction():
+        context.run_migrations()
 
 
 async def run_async_migrations() -> None:
