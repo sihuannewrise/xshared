@@ -1,0 +1,5 @@
+[
+  {"code": "admin", "name": "Администратор", "description": "Полный доступ"},
+  {"code": "viewer", "name": "Наблюдатель", "description": "Только чтение"},
+  {"code": "accountant", "name": "Бухгалтер", "description": "Начисления и отчёты"}
+]

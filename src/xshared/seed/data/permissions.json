@@ -1,0 +1,6 @@
+[
+  {"code": "charges.read", "description": "Просмотр начислений"},
+  {"code": "charges.write", "description": "Редактирование начислений"},
+  {"code": "reports.view", "description": "Просмотр отчётов"},
+  {"code": "admin.all", "description": "Полный доступ"}
+]

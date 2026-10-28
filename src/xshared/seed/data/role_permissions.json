@@ -1,0 +1,5 @@
+{
+  "admin": ["admin.all"],
+  "viewer": ["charges.read", "reports.view"],
+  "accountant": ["charges.read", "charges.write", "reports.view"]
+}
