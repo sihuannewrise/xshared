@@ -3,10 +3,10 @@ from datetime import datetime
 from sqlalchemy import Boolean, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from xshared.db import TimestampedBase
+from xshared.db import BaseWithPK
 
 
-class User(TimestampedBase):
+class User(BaseWithPK):
     __tablename__ = "users"
     __table_args__ = (
         UniqueConstraint("external_id", name="uq_users_external_id"),
