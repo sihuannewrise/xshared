@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from xshared.models import Counterparty, KPP, KppCaMapping
 from xshared.seed.dadata import dd_find_by_id
+from xshared.seed.loaders.base import get_system_user_id
 
 
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -66,53 +67,52 @@ async def _load_dadata(inn: str) -> dict:
 # 2. Upsert контрагента и КПП
 # ============================================================
 
-async def _upsert_counterparty(
-    session: AsyncSession, inn: str, data: dict
-) -> Counterparty:
-    """Создать или обновить контрагента по ИНН."""
-    # kpp — не поле Counterparty, убираем
+async def _upsert_counterparty(session, inn, data):
+    system_id = await get_system_user_id(session)
     cp_data = {k: v for k, v in data.items() if k != "kpp"}
 
     cp = await session.scalar(select(Counterparty).where(Counterparty.inn == inn))
     if cp is None:
-        cp = Counterparty(inn=inn, **cp_data)
+        cp = Counterparty(
+            inn=inn, **cp_data,
+            created_by=system_id, updated_by=system_id,
+        )
         session.add(cp)
         await session.flush()
     else:
         for k, v in cp_data.items():
             setattr(cp, k, v)
+        cp.updated_by = system_id
         await session.flush()
     return cp
 
 
 async def _upsert_kpp_mapping(
-    session: AsyncSession,
-    counterparty: Counterparty,
-    kpp_code: str,
-    is_basic: bool = False,
+    session, counterparty, kpp_code, is_basic=False
 ) -> KppCaMapping:
-    """Создать/обновить КПП и связь с контрагентом."""
+    from xshared.seed.loaders.base import get_system_user_id
+
+    system_id = await get_system_user_id(session)
+
     kpp = await session.scalar(select(KPP).where(KPP.name == kpp_code))
     if kpp is None:
-        kpp = KPP(name=kpp_code)
+        kpp = KPP(name=kpp_code, created_by=system_id, updated_by=system_id)
         session.add(kpp)
         await session.flush()
 
-    mapping = await session.scalar(
-        select(KppCaMapping).where(
-            KppCaMapping.counterparty_id == counterparty.id,
-            KppCaMapping.kpp_id == kpp.id,
-        )
-    )
+    mapping = await session.scalar(...)
     if mapping is None:
         mapping = KppCaMapping(
             counterparty_id=counterparty.id,
             kpp_id=kpp.id,
             is_basic=is_basic,
+            created_by=system_id,
+            updated_by=system_id,
         )
         session.add(mapping)
     else:
         mapping.is_basic = is_basic
+        mapping.updated_by = system_id
 
     await session.flush()
     return mapping

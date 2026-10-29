@@ -125,3 +125,18 @@ data = json.loads(Path('src/xshared/seed/data/kpp_list.json').read_text(encoding
 print('in JSON:', len(data))
 print('unique:', len(set(data)))
 "
+
+
+# 8. Использование
+bash
+# Точечно по ИНН (только DaData)
+xshared seed-counterparties 7707491437 7710895045
+
+# Все из counterparties.json (DaData + КПП из JSON, с кэшем)
+xshared seed-counterparties-json
+
+# Принудительно обновить из DaData
+xshared seed-counterparties-json --refresh
+
+# Указать другой файл
+xshared seed-counterparties-json --file /path/to/counterparties.json

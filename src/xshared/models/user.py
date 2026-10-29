@@ -20,5 +20,8 @@ class User(AuditBase):
     last_login_at: Mapped[datetime | None]
 
     employee: Mapped["Employee | None"] = relationship(
-        back_populates="user", lazy="selectin", uselist=False
+        back_populates="user",
+        lazy="selectin",
+        uselist=False,
+        foreign_keys="Employee.user_id",
     )

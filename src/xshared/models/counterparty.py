@@ -58,7 +58,7 @@ class Counterparty(EntityBase):
     email: Mapped[str | None] = mapped_column(String(150))
     address_full: Mapped[str | None] = mapped_column(String(500))
 
-    kpp_list: Mapped[list["CaKppMapping"]] = relationship(
+    kpp_list: Mapped[list["KppCaMapping"]] = relationship(
         back_populates='counterparty'
     )
     company: Mapped["Company | None"] = relationship(

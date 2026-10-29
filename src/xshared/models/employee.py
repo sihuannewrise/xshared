@@ -41,7 +41,12 @@ class Employee(AuditBase):
 
     person: Mapped["Person"] = relationship(back_populates="employees", lazy="selectin")
     company: Mapped["Company"] = relationship(back_populates="employees", lazy="selectin")
-    user: Mapped["User | None"] = relationship(back_populates="employee", lazy="selectin", uselist=False)
+    user: Mapped["User | None"] = relationship(
+        back_populates="employee",
+        lazy="selectin",
+        uselist=False,
+        foreign_keys=[user_id],
+    )
     assignments: Mapped[list["EmployeeAssignment"]] = relationship(
         back_populates="employee", lazy="selectin",
         order_by="EmployeeAssignment.valid_from.desc()",

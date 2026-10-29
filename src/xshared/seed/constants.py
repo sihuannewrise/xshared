@@ -1,0 +1,3 @@
+SYSTEM_USER_EXTERNAL_ID = "__system__"
+SYSTEM_USER_USERNAME = "system"
+SYSTEM_USER_DISPLAY_NAME = "System (seed)"
