@@ -67,15 +67,20 @@ async def _load_dadata(inn: str) -> dict:
 # 2. Upsert контрагента и КПП
 # ============================================================
 
-async def _upsert_counterparty(session, inn, data):
+async def _upsert_counterparty(
+    session: AsyncSession, inn: str, data: dict
+) -> Counterparty:
+    """Создать или обновить контрагента по ИНН (с аудитом от system user)."""
     system_id = await get_system_user_id(session)
     cp_data = {k: v for k, v in data.items() if k != "kpp"}
 
     cp = await session.scalar(select(Counterparty).where(Counterparty.inn == inn))
     if cp is None:
         cp = Counterparty(
-            inn=inn, **cp_data,
-            created_by=system_id, updated_by=system_id,
+            inn=inn,
+            **cp_data,
+            created_by=system_id,
+            updated_by=system_id,
         )
         session.add(cp)
         await session.flush()
@@ -88,19 +93,30 @@ async def _upsert_counterparty(session, inn, data):
 
 
 async def _upsert_kpp_mapping(
-    session, counterparty, kpp_code, is_basic=False
+    session: AsyncSession,
+    counterparty: Counterparty,
+    kpp_code: str,
+    is_basic: bool = False,
 ) -> KppCaMapping:
-    from xshared.seed.loaders.base import get_system_user_id
-
+    """Создать/обновить КПП и связь с контрагентом (с аудитом)."""
     system_id = await get_system_user_id(session)
 
     kpp = await session.scalar(select(KPP).where(KPP.name == kpp_code))
     if kpp is None:
-        kpp = KPP(name=kpp_code, created_by=system_id, updated_by=system_id)
+        kpp = KPP(
+            name=kpp_code,
+            created_by=system_id,
+            updated_by=system_id,
+        )
         session.add(kpp)
         await session.flush()
 
-    mapping = await session.scalar(...)
+    mapping = await session.scalar(
+        select(KppCaMapping).where(
+            KppCaMapping.counterparty_id == counterparty.id,
+            KppCaMapping.kpp_id == kpp.id,
+        )
+    )
     if mapping is None:
         mapping = KppCaMapping(
             counterparty_id=counterparty.id,
@@ -170,14 +186,11 @@ async def load_counterparty_from_json(
     """
     inn = row["inn"]
 
-    # 1. DaData
     raw = await _load_dadata(inn)
     data = _parse_dadata(raw)
 
-    # 2. Counterparty
     cp = await _upsert_counterparty(session, inn, data)
 
-    # 3. Основной КПП из DaData
     dd_kpp = data.get("kpp")
     json_kpp = row.get("kpp")
 
@@ -185,7 +198,6 @@ async def load_counterparty_from_json(
         await _reset_basic_for_counterparty(session, cp.id)
         await _upsert_kpp_mapping(session, cp, dd_kpp, is_basic=True)
 
-    # 4. КПП из JSON — если отличается от DaData, добавить как дополнительный
     if json_kpp and json_kpp != dd_kpp:
         await _upsert_kpp_mapping(session, cp, json_kpp, is_basic=False)
 

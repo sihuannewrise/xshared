@@ -76,8 +76,8 @@ def downgrade() -> None:
     # conn = op.get_bind()
     # conn.execute(sa.text("TRUNCATE TABLE shared.kpps RESTART IDENTITY"))
 
-    # 3. Удалить system user
-    conn.execute(
-        sa.text("DELETE FROM shared.users WHERE external_id = :ext_id"),
-        {"ext_id": SYSTEM_USER_EXTERNAL_ID},
-    )
+    # 3. Удалить system user (раскомментировать в случае крайней необходимости)
+    # conn.execute(
+    #     sa.text("DELETE FROM shared.users WHERE external_id = :ext_id"),
+    #     {"ext_id": SYSTEM_USER_EXTERNAL_ID},
+    # )
