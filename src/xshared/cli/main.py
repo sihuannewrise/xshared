@@ -18,8 +18,19 @@ app = typer.Typer(help="xshared CLI")
 @app.command()
 def seed_counterparties(
     inns: Annotated[list[str], typer.Argument(help="ИНН контрагентов")],
+    refresh: Annotated[
+        bool,
+        typer.Option("--refresh", help="Игнорировать кэш DaData"),
+    ] = False,
 ):
     """Заполнить контрагентов из DaData по ИНН (только основной КПП)."""
+    if refresh:
+        for inn in inns:
+            cache_file = CACHE_DIR / f"party_{inn}.json"
+            if cache_file.exists():
+                cache_file.unlink()
+        print("Cache cleared for provided INNs")
+
     async def _run():
         async with session_scope() as session:
             for inn in inns:

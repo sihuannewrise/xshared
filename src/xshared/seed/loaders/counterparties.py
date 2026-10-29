@@ -1,4 +1,6 @@
 import json
+import re
+
 from datetime import datetime
 from pathlib import Path
 
@@ -21,12 +23,11 @@ CACHE_DIR.mkdir(exist_ok=True)
 
 def _parse_dadata(data: dict) -> dict:
     """Преобразовать ответ DaData в поля Counterparty."""
-    return {
+    result = {
         "name": data["data"]["name"]["full"],
         "opf_short": data["data"]["opf"]["short"],
         "name_full_with_opf": data["data"]["name"]["full_with_opf"],
         "status": data["data"]["state"]["status"],
-        "inn": data["data"]["inn"],
         "ogrn": data["data"]["ogrn"],
         "ogrn_date": _ts_to_dt(data["data"]["ogrn_date"]),
         "actuality_date": _ts_to_dt(data["data"]["state"]["actuality_date"]),
@@ -37,7 +38,65 @@ def _parse_dadata(data: dict) -> dict:
         "counterparty_type": data["data"]["type"],
         "branch_type": data["data"].get("branch_type"),
         "kpp": data["data"].get("kpp"),
+        "email": data["data"].get("email"),
     }
+
+    # --- Руководитель (для юрлиц) ---
+    management = data["data"].get("management")
+    if management:
+        mgmt_name = (management.get("name") or "").strip()
+        mgmt_post = (management.get("post") or "").strip()
+
+        result["management_name"] = mgmt_name if mgmt_name else None
+        result["management_disqualified"] = management.get("disqualified")
+
+        is_legal_entity = _is_legal_entity_name(mgmt_name)
+
+        if is_legal_entity:
+            result["management_post"] = "Управляемое общество"
+        else:
+            result["management_post"] = mgmt_post if mgmt_post else None
+
+            if mgmt_name:
+                parts = mgmt_name.split()
+                if len(parts) == 1:
+                    result["fio_surname"] = parts[0]
+                elif len(parts) == 2:
+                    result["fio_surname"] = parts[0]
+                    result["fio_name"] = parts[1]
+                elif len(parts) >= 3:
+                    result["fio_surname"] = parts[0]
+                    result["fio_name"] = parts[1]
+                    result["fio_patronymic"] = " ".join(parts[2:])
+
+    # --- ИП (физлица) ---
+    fio = data["data"].get("fio")
+    if fio:
+        result["fio_surname"] = fio.get("surname")
+        result["fio_name"] = fio.get("name")
+        result["fio_patronymic"] = fio.get("patronymic")
+
+    return result
+
+
+def _is_legal_entity_name(name: str) -> bool:
+    """
+    Проверяет, является ли строка названием юридического лица.
+    Ищет организационно-правовые формы (ОПФ) в начале или в тексте.
+    """
+    if not name:
+        return False
+
+    name_upper = name.upper()
+    markers = [
+        "ООО", "ОБЩЕСТВО", "АО", "ПАО", "ЗАО", "ОАО", "ИП",
+        "МУП", "ГУП", "АНО", "НП", "АССОЦИАЦИЯ", "ФОНД",
+        "УЧРЕЖДЕНИЕ", "ПРЕДПРИЯТИЕ", "УНИТАРНОЕ"
+    ]
+    if '"' in name or "«" in name:
+        return True
+
+    return any(marker in name_upper for marker in markers)
 
 
 def _ts_to_dt(ts):
@@ -64,7 +123,7 @@ async def _load_dadata(inn: str) -> dict:
 
 
 # ============================================================
-# 2. Upsert контрагента и КПП
+# 2. Вставка контрагента с КПП
 # ============================================================
 
 async def _upsert_counterparty(
@@ -72,7 +131,7 @@ async def _upsert_counterparty(
 ) -> Counterparty:
     """Создать или обновить контрагента по ИНН (с аудитом от system user)."""
     system_id = await get_system_user_id(session)
-    cp_data = {k: v for k, v in data.items() if k != "kpp"}
+    cp_data = {k: v for k, v in data.items() if k not in ("kpp", "inn")}
 
     cp = await session.scalar(select(Counterparty).where(Counterparty.inn == inn))
     if cp is None:
@@ -98,16 +157,10 @@ async def _upsert_kpp_mapping(
     kpp_code: str,
     is_basic: bool = False,
 ) -> KppCaMapping:
-    """Создать/обновить КПП и связь с контрагентом (с аудитом)."""
-    system_id = await get_system_user_id(session)
-
+    """Создать/обновить КПП и связь с контрагентом."""
     kpp = await session.scalar(select(KPP).where(KPP.name == kpp_code))
     if kpp is None:
-        kpp = KPP(
-            name=kpp_code,
-            created_by=system_id,
-            updated_by=system_id,
-        )
+        kpp = KPP(name=kpp_code)
         session.add(kpp)
         await session.flush()
 
@@ -122,13 +175,10 @@ async def _upsert_kpp_mapping(
             counterparty_id=counterparty.id,
             kpp_id=kpp.id,
             is_basic=is_basic,
-            created_by=system_id,
-            updated_by=system_id,
         )
         session.add(mapping)
     else:
         mapping.is_basic = is_basic
-        mapping.updated_by = system_id
 
     await session.flush()
     return mapping
