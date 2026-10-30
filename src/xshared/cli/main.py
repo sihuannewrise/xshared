@@ -24,6 +24,7 @@ def seed_counterparties(
     ] = False,
 ):
     """Заполнить контрагентов из DaData по ИНН (только основной КПП)."""
+
     if refresh:
         for inn in inns:
             cache_file = CACHE_DIR / f"party_{inn}.json"
@@ -32,13 +33,14 @@ def seed_counterparties(
         print("Cache cleared for provided INNs")
 
     async def _run():
-        async with session_scope() as session:
-            for inn in inns:
-                try:
+        for inn in inns:
+            try:
+                async with session_scope() as session:
                     cp = await load_counterparty(session, inn)
                     print(f"OK: {inn} -> {cp.id} ({cp.name})")
-                except Exception as e:
-                    print(f"FAIL: {inn}: {e}")
+            except Exception as e:
+                print(f"FAIL: {inn}: {e}")
+
     asyncio.run(_run())
 
 

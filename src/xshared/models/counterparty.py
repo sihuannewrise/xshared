@@ -9,7 +9,7 @@ from xshared.db import EntityBase, EntityStatus, CounterpartyType, CounterpartyB
 class Counterparty(EntityBase):
     __tablename__ = "counterparties"
     __table_args__ = (
-        CheckConstraint("name ~ '^[0-9]{6}$'", name="postal_code_format"),
+        CheckConstraint("postal_code ~ '^[0-9]{6}$'", name="postal_code_format"),
     )
 
     name: Mapped[str] = mapped_column(String(160), index=True)

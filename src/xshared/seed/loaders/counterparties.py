@@ -27,6 +27,9 @@ def _parse_dadata(data: dict) -> dict:
     name_full = data["data"]["name"]["full"]
     name_full_with_opf = f'{opf_full} "{name_full}"'
 
+    raw_postal = data["data"].get("address", {}).get("data", {}).get("postal_code")
+    clean_postal = re.sub(r'\D', '', str(raw_postal)) if raw_postal else None
+
     result = {
         "name": name_full,
         "name_full_with_opf": name_full_with_opf,
@@ -38,7 +41,7 @@ def _parse_dadata(data: dict) -> dict:
         "registration_date": _ts_to_dt(data["data"]["state"]["registration_date"]),
         "liquidation_date": _ts_to_dt(data["data"]["state"]["liquidation_date"]),
         "management_start_date": _ts_to_dt(data["data"]["management"]["start_date"]),
-        "postal_code": data["data"]["address"]["data"]["postal_code"],
+        "postal_code": clean_postal,
         "address": data["data"]["address"]["value"],
         "address_full": data["data"]["address"]["data"]["source"],
         "counterparty_type": data["data"]["type"],
