@@ -44,7 +44,7 @@ def _parse_dadata(data: dict) -> dict:
         "counterparty_type": data["data"]["type"],
         "branch_type": data["data"]["branch_type"],
         "kpp": data["data"]["kpp"],
-        "email": data["data"]["email"],
+        "email": data["data"]["emails"],
     }
 
     # --- Руководитель (для юрлиц) ---
