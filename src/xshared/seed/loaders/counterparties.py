@@ -89,23 +89,8 @@ def _parse_dadata(data: dict) -> dict:
 
 
 def _is_legal_entity_name(name: str) -> bool:
-    """
-    Проверяет, является ли строка названием юридического лица (Управляющей компании).
-    """
-    if not name:
-        return False
-    name_upper = name.upper()
-    if '"' in name or '«' in name or '»' in name:
-        return True
-    markers_start = (
-        "ООО", "ОБЩЕСТВО", "АО", "ПАО", "ЗАО", "ОАО", "МУП", "ГУП",
-        "АНО", "НП", "АССОЦИАЦИЯ", "ФОНД", "УЧРЕЖДЕНИЕ", "ПРЕДПРИЯТИЕ", "УНИТАРНОЕ"
-    )
-    if any(name_upper.startswith(marker) for marker in markers_start):
-        return True
-    if len(name.split()) > 4:
-        return True
-    return False
+    """Проверяет, является ли строка названием юрлица (есть кавычки)."""
+    return bool(name) and any(q in name for q in ('"', '«', '»'))
 
 
 def _ts_to_dt(ts):
