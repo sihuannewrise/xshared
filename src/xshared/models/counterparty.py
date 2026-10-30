@@ -12,10 +12,10 @@ class Counterparty(EntityBase):
         CheckConstraint("postal_code ~ '^[0-9]{6}$'", name="postal_code_format"),
     )
 
-    name: Mapped[str] = mapped_column(String(160), index=True)
+    name: Mapped[str] = mapped_column(String(300), index=True)
     inn: Mapped[str | None] = mapped_column(String(12), unique=True)
     opf_short: Mapped[str | None] = mapped_column(String(10))
-    name_full_with_opf: Mapped[str | None] = mapped_column(String(300))
+    name_full_with_opf: Mapped[str | None] = mapped_column(String(500))
 
     status: Mapped[EntityStatus | None] = mapped_column(
         Enum(
@@ -52,7 +52,7 @@ class Counterparty(EntityBase):
     ogrn: Mapped[str | None] = mapped_column(String(20))
     ogrn_date: Mapped[datetime | None] = mapped_column(DateTime)
 
-    management_post: Mapped[str | None] = mapped_column(String(50))
+    management_post: Mapped[str | None] = mapped_column(String(255))
     management_name: Mapped[str | None] = mapped_column(String(300))
     management_disqualified: Mapped[str | None] = mapped_column(String(20))
     fio_surname: Mapped[str | None] = mapped_column(String(100))
