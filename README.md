@@ -133,7 +133,7 @@ bash
 xshared seed-counterparties 7707491437 7710895045
 
 # Все из counterparties.json (DaData + КПП из JSON, с кэшем)
-xshared seed-counterparties-json
+xshared seed-cpt-json --offset 0 --limit 50
 
 # Принудительно обновить из DaData
 xshared seed-counterparties-json --refresh

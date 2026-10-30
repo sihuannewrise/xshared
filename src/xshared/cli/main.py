@@ -20,6 +20,10 @@ def seed_cpt(
         bool,
         typer.Option("--refresh", help="Очистить кэш DaData"),
     ] = False,
+    force: Annotated[
+        bool,
+        typer.Option("--force", help="Принудительно обновить данные в БД"),
+    ] = False,
 ):
     """
     Seed counterparty by INN (one or list).
@@ -37,7 +41,7 @@ def seed_cpt(
         for inn in inns:
             try:
                 async with session_scope() as session:
-                    cp = await load_counterparty(session, inn)
+                    cp = await load_counterparty(session, inn, force_db_update=force)
                     print(f"OK: {inn} -> {cp.id} ({cp.name})")
             except Exception as e:
                 print(f"FAIL: {inn}: {e}")
@@ -67,6 +71,14 @@ def seed_cpt_json(
         bool,
         typer.Option("--refresh", help="Игнорировать кэш DaData"),
     ] = False,
+    skip_cached: Annotated[
+        bool,
+        typer.Option("--skip-cached", help="Пропустить ИНН, для которых уже есть кэш"),
+    ] = False,
+    force: Annotated[
+        bool,
+        typer.Option("--force", help="Принудительно обновить данные в БД"),
+    ] = False,
 ):
     """Заполнить контрагентов из counterparties.json (DaData + КПП из JSON)."""
     if refresh:
@@ -77,9 +89,11 @@ def seed_cpt_json(
     async def _run():
         async with session_scope() as session:
             stats = await load_counterparties_from_json(
-                session, file, offset=offset, limit=limit, delay_seconds=delay
+                session, file, offset=offset, limit=limit, delay_seconds=delay,
+                force_db_update=force,
+                skip_if_cached=skip_cached,
             )
-            print(f"\nDone: ok={stats['ok']}, fail={stats['fail']} (total processed: {stats['total']})")
+            print(f"\nDone: ok={stats['ok']}, fail={stats['fail']}, skipped={stats['skipped']} (total processed: {stats['total']})")
             if stats["errors"]:
                 print("Errors:")
                 for err in stats["errors"]:

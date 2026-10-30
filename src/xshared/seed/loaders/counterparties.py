@@ -16,6 +16,11 @@ CACHE_DIR = DATA_DIR / "cache"
 CACHE_DIR.mkdir(exist_ok=True)
 
 
+def _is_cached(inn: str) -> bool:
+    """Проверяет, есть ли файл кэша для указанного ИНН."""
+    cache_file = CACHE_DIR / f"party_{inn}.json"
+    return cache_file.exists()
+
 # ============================================================
 # 1. DaData: парсинг и загрузка
 # ============================================================
@@ -199,12 +204,31 @@ async def _reset_basic_for_counterparty(
 async def load_counterparty(
     session: AsyncSession,
     inn: str,
-    kpps: list[str] | None = None
+    kpps: list[str] | None = None,
+    force_db_update: bool = False,
 ) -> Counterparty:
     """
     Загрузить контрагента по ИНН из DaData.
     Если передан kpps (список КПП), они добавляются как дополнительные.
+
+    :param force_db_update: Если False, обновляет БД только если контрагента там нет.
+                            Если True, перезаписывает данные из DaData.
     """
+    cp = await session.scalar(select(Counterparty).where(Counterparty.inn == inn))
+
+    if cp is not None and not force_db_update:
+        # Если контрагент уже есть и мы не форсируем обновление — пропускаем
+        # (но можно опционально дописать связи КПП, если их не было)
+        # print(f"SKIP: {inn} (already in DB)")
+
+        # Опционально: если контрагент есть, но у него нет связей КПП, добавим их из JSON
+        if kpps:
+            for kpp in kpps:
+                await _upsert_kpp_mapping(session, cp, kpp, is_basic=False)
+
+        return cp
+
+    # 2. Если контрагента нет ИЛИ force_db_update=True — берем данные из DaData/кэша
     raw = await _load_dadata(inn)
     data = _parse_dadata(raw)
 
@@ -212,12 +236,10 @@ async def load_counterparty(
 
     dd_kpp = data.get("kpp")
 
-    # Основной КПП из DaData
     if dd_kpp:
         await _reset_basic_for_counterparty(session, cp.id)
         await _upsert_kpp_mapping(session, cp, dd_kpp, is_basic=True)
 
-    # Дополнительные КПП из JSON
     if kpps:
         for kpp in kpps:
             if kpp != dd_kpp:
@@ -234,16 +256,20 @@ async def load_counterparties_from_json(
     limit: int | None = None,
     delay_seconds: float = 0.2,
     use_savepoints: bool = True,
+    force_db_update: bool = False,
+    skip_if_cached: bool = False,
 ) -> dict[str, int | list[str]]:
     """
     Загрузить контрагентов из counterparties.json порциями.
     Формат JSON: [{"inn": "...", "kpps": ["...", "..."]}, ...]
+
+    :param skip_if_cached: Если True, пропускать ИНН, для которых уже есть файл кэша.
     """
     path = file_path or (DATA_DIR / "counterparties.json")
     items = json.loads(path.read_text(encoding="utf-8"))
 
     items_to_process = items[offset : offset + limit if limit else None]
-    stats = {"ok": 0, "fail": 0, "errors": [], "total": len(items_to_process)}
+    stats = {"ok": 0, "fail": 0, "skipped": 0, "errors": [], "total": len(items_to_process)}
 
     for item in items_to_process:
         inn = item.get("inn")
@@ -254,12 +280,17 @@ async def load_counterparties_from_json(
             stats["errors"].append(f"no inn: {item}")
             continue
 
+        if skip_if_cached and _is_cached(inn):
+            stats["skipped"] += 1
+            print(f"SKIP: {inn} (cached)")
+            continue
+
         try:
             if use_savepoints:
                 async with session.begin_nested():
-                    await load_counterparty(session, inn, kpps)
+                    await load_counterparty(session, inn, kpps, force_db_update=force_db_update)
             else:
-                await load_counterparty(session, inn, kpps)
+                await load_counterparty(session, inn, kpps, force_db_update=force_db_update)
 
             stats["ok"] += 1
             print(f"OK: {inn}")
