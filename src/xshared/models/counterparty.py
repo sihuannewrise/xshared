@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String
+from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from xshared.db import EntityBase, EntityStatus, CounterpartyType, CounterpartyBranch
@@ -8,6 +8,9 @@ from xshared.db import EntityBase, EntityStatus, CounterpartyType, CounterpartyB
 
 class Counterparty(EntityBase):
     __tablename__ = "counterparties"
+    __table_args__ = (
+        CheckConstraint("name ~ '^[0-9]{6}$'", name="postal_code_format"),
+    )
 
     name: Mapped[str] = mapped_column(String(160), index=True)
     inn: Mapped[str | None] = mapped_column(String(12), unique=True)
@@ -49,14 +52,17 @@ class Counterparty(EntityBase):
     ogrn: Mapped[str | None] = mapped_column(String(20))
     ogrn_date: Mapped[datetime | None] = mapped_column(DateTime)
 
-    fio_surname: Mapped[str | None] = mapped_column(String(50))
-    fio_name: Mapped[str | None] = mapped_column(String(50))
-    fio_patronymic: Mapped[str | None] = mapped_column(String(50))
     management_post: Mapped[str | None] = mapped_column(String(50))
-    management_disqualified: Mapped[str | None] = mapped_column(String(50))
-    management_name: Mapped[str | None] = mapped_column(String(150))
+    management_name: Mapped[str | None] = mapped_column(String(300))
+    management_disqualified: Mapped[str | None] = mapped_column(String(20))
+    fio_surname: Mapped[str | None] = mapped_column(String(100))
+    fio_name: Mapped[str | None] = mapped_column(String(100))
+    fio_patronymic: Mapped[str | None] = mapped_column(String(100))
+    management_start_date: Mapped[datetime | None] = mapped_column(DateTime)
+
     email: Mapped[str | None] = mapped_column(String(150))
     address_full: Mapped[str | None] = mapped_column(String(500))
+    postal_code: Mapped[str | None] = mapped_column(String(6))
 
     kpp_list: Mapped[list["KppCaMapping"]] = relationship(
         back_populates='counterparty'

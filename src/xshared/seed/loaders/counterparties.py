@@ -23,22 +23,28 @@ CACHE_DIR.mkdir(exist_ok=True)
 
 def _parse_dadata(data: dict) -> dict:
     """Преобразовать ответ DaData в поля Counterparty."""
+    opf_full = data["data"]["opf"]["full"]
+    name_full = data["data"]["name"]["full"]
+    name_full_with_opf = f'{opf_full} "{name_full}"'
+
     result = {
-        "name": data["data"]["name"]["full"],
+        "name": name_full,
+        "name_full_with_opf": name_full_with_opf,
         "opf_short": data["data"]["opf"]["short"],
-        "name_full_with_opf": data["data"]["name"]["full_with_opf"],
         "status": data["data"]["state"]["status"],
         "ogrn": data["data"]["ogrn"],
         "ogrn_date": _ts_to_dt(data["data"]["ogrn_date"]),
         "actuality_date": _ts_to_dt(data["data"]["state"]["actuality_date"]),
         "registration_date": _ts_to_dt(data["data"]["state"]["registration_date"]),
         "liquidation_date": _ts_to_dt(data["data"]["state"]["liquidation_date"]),
+        "management_start_date": _ts_to_dt(data["data"]["management"]["start_date"]),
+        "postal_code": data["data"]["address"]["data"]["postal_code"],
         "address": data["data"]["address"]["value"],
         "address_full": data["data"]["address"]["data"]["source"],
         "counterparty_type": data["data"]["type"],
-        "branch_type": data["data"].get("branch_type"),
-        "kpp": data["data"].get("kpp"),
-        "email": data["data"].get("email"),
+        "branch_type": data["data"]["branch_type"],
+        "kpp": data["data"]["kpp"],
+        "email": data["data"]["email"],
     }
 
     # --- Руководитель (для юрлиц) ---
@@ -55,7 +61,7 @@ def _parse_dadata(data: dict) -> dict:
         if is_legal_entity:
             result["management_post"] = "Управляемое общество"
         else:
-            result["management_post"] = mgmt_post if mgmt_post else None
+            result["management_post"] = mgmt_post.capitalize() if mgmt_post else None
 
             if mgmt_name:
                 parts = mgmt_name.split()
