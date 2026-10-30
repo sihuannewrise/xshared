@@ -1,5 +1,4 @@
 import json
-import re
 
 from datetime import datetime
 from pathlib import Path
@@ -26,9 +25,6 @@ def _parse_dadata(data: dict) -> dict:
     opf_full = data["data"]["opf"]["full"]
     name_full = data["data"]["name"]["full"]
     name_full_with_opf = f'{opf_full} "{name_full}"'
-
-    # raw_postal =
-    # clean_postal = re.sub(r'\D', '', str(raw_postal)) if raw_postal else None
 
     result = {
         "name": name_full,
