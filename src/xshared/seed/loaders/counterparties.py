@@ -52,8 +52,8 @@ def _parse_dadata(data: dict) -> dict:
         "address": addr.get("value"),
         "address_full": addr_data.get("source"),
         "counterparty_type": data["data"]["type"],
-        "branch_type": data["data"]["branch_type"],
-        "kpp": data["data"]["kpp"],
+        "branch_type": data["data"].get("branch_type"),
+        "kpp": data["data"].get("kpp"),
         "email": data["data"].get("emails"),
     }
 
@@ -103,15 +103,15 @@ def _ts_to_dt(ts):
     return datetime.fromtimestamp(ts / 1000)
 
 
-async def _load_dadata(inn: str) -> dict:
-    """Получить данные из кэша, если кэша нет - создать его с данными из DaData."""
+async def _load_dadata(inn: str) -> dict | None:
+    """Получить данные из кэша или DaData. Если данных нет - вернуть None."""
     cache_file = CACHE_DIR / f"party_{inn}.json"
     if cache_file.exists():
         return json.loads(cache_file.read_text(encoding="utf-8"))
 
     result = await dd_find_by_id("party", inn)
     if not result:
-        raise ValueError(f"DaData: no data for INN {inn}")
+        return None
 
     raw = result[0]
     cache_file.write_text(
@@ -206,7 +206,7 @@ async def load_counterparty(
     inn: str,
     kpps: list[str] | None = None,
     force_db_update: bool = False,
-) -> Counterparty:
+) -> Counterparty | None:
     """
     Загрузить контрагента по ИНН из DaData.
     Если передан kpps (список КПП), они добавляются как дополнительные.
@@ -230,21 +230,18 @@ async def load_counterparty(
 
     # 2. Если контрагента нет ИЛИ force_db_update=True — берем данные из DaData/кэша
     raw = await _load_dadata(inn)
+    if raw is None:
+        return None
     data = _parse_dadata(raw)
-
     cp = await _upsert_counterparty(session, inn, data)
-
     dd_kpp = data.get("kpp")
-
     if dd_kpp:
         await _reset_basic_for_counterparty(session, cp.id)
         await _upsert_kpp_mapping(session, cp, dd_kpp, is_basic=True)
-
     if kpps:
         for kpp in kpps:
             if kpp != dd_kpp:
                 await _upsert_kpp_mapping(session, cp, kpp, is_basic=False)
-
     return cp
 
 
@@ -288,9 +285,15 @@ async def load_counterparties_from_json(
         try:
             if use_savepoints:
                 async with session.begin_nested():
-                    await load_counterparty(session, inn, kpps, force_db_update=force_db_update)
+                    cp = await load_counterparty(session, inn, kpps, force_db_update=force_db_update)
             else:
-                await load_counterparty(session, inn, kpps, force_db_update=force_db_update)
+                cp = await load_counterparty(session, inn, kpps, force_db_update=force_db_update)
+
+            if cp is None:
+                stats["fail"] += 1
+                stats["errors"].append(f"{inn}: DaData: no data")
+                print(f"FAIL: {inn}: DaData: no data")
+                continue
 
             stats["ok"] += 1
             print(f"OK: {inn}")
