@@ -27,8 +27,8 @@ def _parse_dadata(data: dict) -> dict:
     name_full = data["data"]["name"]["full"]
     name_full_with_opf = f'{opf_full} "{name_full}"'
 
-    raw_postal = data["data"].get("address", {}).get("data", {}).get("postal_code")
-    clean_postal = re.sub(r'\D', '', str(raw_postal)) if raw_postal else None
+    # raw_postal =
+    # clean_postal = re.sub(r'\D', '', str(raw_postal)) if raw_postal else None
 
     result = {
         "name": name_full,
@@ -41,7 +41,7 @@ def _parse_dadata(data: dict) -> dict:
         "registration_date": _ts_to_dt(data["data"]["state"]["registration_date"]),
         "liquidation_date": _ts_to_dt(data["data"]["state"]["liquidation_date"]),
         "management_start_date": _ts_to_dt(data["data"]["management"]["start_date"]),
-        "postal_code": clean_postal,
+        "postal_code": data["data"]["address"]["data"]["postal_code"],
         "address": data["data"]["address"]["value"],
         "address_full": data["data"]["address"]["data"]["source"],
         "counterparty_type": data["data"]["type"],
@@ -64,7 +64,7 @@ def _parse_dadata(data: dict) -> dict:
         if is_legal_entity:
             result["management_post"] = "Управляемое общество"
         else:
-            result["management_post"] = mgmt_post.capitalize() if mgmt_post else None
+            result["management_post"] = mgmt_post.capitalize()  if mgmt_post else None
 
             if mgmt_name:
                 parts = mgmt_name.split()
@@ -90,22 +90,22 @@ def _parse_dadata(data: dict) -> dict:
 
 def _is_legal_entity_name(name: str) -> bool:
     """
-    Проверяет, является ли строка названием юридического лица.
-    Ищет организационно-правовые формы (ОПФ) в начале или в тексте.
+    Проверяет, является ли строка названием юридического лица (Управляющей компании).
     """
     if not name:
         return False
-
     name_upper = name.upper()
-    markers = [
-        "ООО", "ОБЩЕСТВО", "АО", "ПАО", "ЗАО", "ОАО", "ИП",
-        "МУП", "ГУП", "АНО", "НП", "АССОЦИАЦИЯ", "ФОНД",
-        "УЧРЕЖДЕНИЕ", "ПРЕДПРИЯТИЕ", "УНИТАРНОЕ"
-    ]
-    if '"' in name or "«" in name:
+    if '"' in name or '«' in name or '»' in name:
         return True
-
-    return any(marker in name_upper for marker in markers)
+    markers_start = (
+        "ООО", "ОБЩЕСТВО", "АО", "ПАО", "ЗАО", "ОАО", "МУП", "ГУП",
+        "АНО", "НП", "АССОЦИАЦИЯ", "ФОНД", "УЧРЕЖДЕНИЕ", "ПРЕДПРИЯТИЕ", "УНИТАРНОЕ"
+    )
+    if any(name_upper.startswith(marker) for marker in markers_start):
+        return True
+    if len(name.split()) > 4:
+        return True
+    return False
 
 
 def _ts_to_dt(ts):
