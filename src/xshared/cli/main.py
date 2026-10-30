@@ -1,14 +1,12 @@
 import asyncio
+import typer
+
 from pathlib import Path
 from typing import Annotated
 
-import typer
-
 from xshared.db.session import session_scope
 from xshared.seed.loaders.counterparties import (
-    CACHE_DIR,
-    load_counterparties_from_json,
-    load_counterparty,
+    CACHE_DIR, load_counterparty, load_counterparties_from_json
 )
 
 
@@ -16,15 +14,18 @@ app = typer.Typer(help="xshared CLI")
 
 
 @app.command()
-def seed_counterparties(
+def seed_cpt(
     inns: Annotated[list[str], typer.Argument(help="ИНН контрагентов")],
     refresh: Annotated[
         bool,
-        typer.Option("--refresh", help="Игнорировать кэш DaData"),
+        typer.Option("--refresh", help="Очистить кэш DaData"),
     ] = False,
 ):
-    """Заполнить контрагентов из DaData по ИНН (только основной КПП)."""
-
+    """
+    Seed counterparty by INN (one or list).
+    Добавить/обновить данные контрагента из кэш-файла,
+    если кэша нет, сделать запрос в DaData.
+    """
     if refresh:
         for inn in inns:
             cache_file = CACHE_DIR / f"party_{inn}.json"
@@ -45,11 +46,23 @@ def seed_counterparties(
 
 
 @app.command()
-def seed_counterparties_json(
+def seed_cpt_json(
     file: Annotated[
         Path | None,
         typer.Option(help="JSON-файл (по умолчанию seed/data/counterparties.json)"),
     ] = None,
+    offset: Annotated[
+        int,
+        typer.Option(help="Пропустить первые N записей"),
+    ] = 0,
+    limit: Annotated[
+        int | None,
+        typer.Option(help="Загрузить не более N записей (None - все)"),
+    ] = None,
+    delay: Annotated[
+        float,
+        typer.Option(help="Пауза между запросами к DaData в секундах"),
+    ] = 0.2,
     refresh: Annotated[
         bool,
         typer.Option("--refresh", help="Игнорировать кэш DaData"),
@@ -63,8 +76,10 @@ def seed_counterparties_json(
 
     async def _run():
         async with session_scope() as session:
-            stats = await load_counterparties_from_json(session, file)
-            print(f"\nDone: ok={stats['ok']}, fail={stats['fail']}")
+            stats = await load_counterparties_from_json(
+                session, file, offset=offset, limit=limit, delay_seconds=delay
+            )
+            print(f"\nDone: ok={stats['ok']}, fail={stats['fail']} (total processed: {stats['total']})")
             if stats["errors"]:
                 print("Errors:")
                 for err in stats["errors"]:

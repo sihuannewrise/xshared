@@ -1,5 +1,5 @@
+import asyncio
 import json
-
 from datetime import datetime
 from pathlib import Path
 
@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from xshared.models import Counterparty, KPP, KppCaMapping
 from xshared.seed.dadata import dd_find_by_id
 from xshared.seed.loaders.base import get_system_user_id
-
+from xshared.seed.constants import MANAGED_COMPANY_POST_TITLE
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 CACHE_DIR = DATA_DIR / "cache"
@@ -26,6 +26,12 @@ def _parse_dadata(data: dict) -> dict:
     name_full = data["data"]["name"]["full"]
     name_full_with_opf = f'{opf_full} "{name_full}"'
 
+    # Безопасное извлечение адреса
+    addr = data["data"].get("address") or {}
+    addr_data = addr.get("data") or {}
+
+    mgmt = data["data"].get("management") or {}
+
     result = {
         "name": name_full,
         "name_full_with_opf": name_full_with_opf,
@@ -36,31 +42,28 @@ def _parse_dadata(data: dict) -> dict:
         "actuality_date": _ts_to_dt(data["data"]["state"]["actuality_date"]),
         "registration_date": _ts_to_dt(data["data"]["state"]["registration_date"]),
         "liquidation_date": _ts_to_dt(data["data"]["state"]["liquidation_date"]),
-        "management_start_date": _ts_to_dt(data["data"]["management"]["start_date"]),
-        "postal_code": data["data"]["address"]["data"]["postal_code"],
-        "address": data["data"]["address"]["value"],
-        "address_full": data["data"]["address"]["data"]["source"],
+        "management_start_date": _ts_to_dt(mgmt.get("start_date")),
+        "postal_code": addr_data.get("postal_code"),
+        "address": addr.get("value"),
+        "address_full": addr_data.get("source"),
         "counterparty_type": data["data"]["type"],
         "branch_type": data["data"]["branch_type"],
         "kpp": data["data"]["kpp"],
-        "email": data["data"]["emails"],
+        "email": data["data"].get("emails"),
     }
 
     # --- Руководитель (для юрлиц) ---
-    management = data["data"].get("management")
-    if management:
-        mgmt_name = (management.get("name") or "").strip()
-        mgmt_post = (management.get("post") or "").strip()
+    if mgmt:
+        mgmt_name = (mgmt.get("name") or "").strip()
+        mgmt_post = (mgmt.get("post") or "").strip()
 
         result["management_name"] = mgmt_name if mgmt_name else None
-        result["management_disqualified"] = management.get("disqualified")
+        result["management_disqualified"] = mgmt.get("disqualified")
 
-        is_legal_entity = _is_legal_entity_name(mgmt_name)
-
-        if is_legal_entity:
-            result["management_post"] = "Управляемое общество"
+        if _is_legal_entity_name(mgmt_name):
+            result["management_post"] = MANAGED_COMPANY_POST_TITLE
         else:
-            result["management_post"] = mgmt_post.capitalize()  if mgmt_post else None
+            result["management_post"] = mgmt_post.capitalize() if mgmt_post else None
 
             if mgmt_name:
                 parts = mgmt_name.split()
@@ -96,7 +99,7 @@ def _ts_to_dt(ts):
 
 
 async def _load_dadata(inn: str) -> dict:
-    """Получить данные из DaData (с кэшем)."""
+    """Получить данные из кэша, если кэша нет - создать его с данными из DaData."""
     cache_file = CACHE_DIR / f"party_{inn}.json"
     if cache_file.exists():
         return json.loads(cache_file.read_text(encoding="utf-8"))
@@ -177,7 +180,7 @@ async def _upsert_kpp_mapping(
 async def _reset_basic_for_counterparty(
     session: AsyncSession, counterparty_id: int
 ) -> None:
-    """Снять is_basic со всех КПП контрагента (если триггер не настроен)."""
+    """Снять is_basic со всех КПП контрагента."""
     await session.execute(
         update(KppCaMapping)
         .where(
@@ -190,13 +193,17 @@ async def _reset_basic_for_counterparty(
 
 
 # ============================================================
-# 3. Загрузка одного контрагента по ИНН (только DaData)
+# 3. Универсальная загрузка (DaData + опционально JSON)
 # ============================================================
 
-async def load_counterparty(session: AsyncSession, inn: str) -> Counterparty:
+async def load_counterparty(
+    session: AsyncSession,
+    inn: str,
+    kpps: list[str] | None = None
+) -> Counterparty:
     """
-    Загрузить одного контрагента по ИНН из DaData.
-    Обновляет только основной КПП из DaData.
+    Загрузить контрагента по ИНН из DaData.
+    Если передан kpps (список КПП), они добавляются как дополнительные.
     """
     raw = await _load_dadata(inn)
     data = _parse_dadata(raw)
@@ -204,8 +211,67 @@ async def load_counterparty(session: AsyncSession, inn: str) -> Counterparty:
     cp = await _upsert_counterparty(session, inn, data)
 
     dd_kpp = data.get("kpp")
+
+    # Основной КПП из DaData
     if dd_kpp:
         await _reset_basic_for_counterparty(session, cp.id)
         await _upsert_kpp_mapping(session, cp, dd_kpp, is_basic=True)
 
+    # Дополнительные КПП из JSON
+    if kpps:
+        for kpp in kpps:
+            if kpp != dd_kpp:
+                await _upsert_kpp_mapping(session, cp, kpp, is_basic=False)
+
     return cp
+
+
+async def load_counterparties_from_json(
+    session: AsyncSession,
+    file_path: Path | None = None,
+    *,
+    offset: int = 0,
+    limit: int | None = None,
+    delay_seconds: float = 0.2,
+    use_savepoints: bool = True,
+) -> dict[str, int | list[str]]:
+    """
+    Загрузить контрагентов из counterparties.json порциями.
+    Формат JSON: [{"inn": "...", "kpps": ["...", "..."]}, ...]
+    """
+    path = file_path or (DATA_DIR / "counterparties.json")
+    items = json.loads(path.read_text(encoding="utf-8"))
+
+    items_to_process = items[offset : offset + limit if limit else None]
+    stats = {"ok": 0, "fail": 0, "errors": [], "total": len(items_to_process)}
+
+    for item in items_to_process:
+        inn = item.get("inn")
+        kpps = item.get("kpps")
+
+        if not inn:
+            stats["fail"] += 1
+            stats["errors"].append(f"no inn: {item}")
+            continue
+
+        try:
+            if use_savepoints:
+                async with session.begin_nested():
+                    await load_counterparty(session, inn, kpps)
+            else:
+                await load_counterparty(session, inn, kpps)
+
+            stats["ok"] += 1
+            print(f"OK: {inn}")
+
+            if delay_seconds > 0:
+                await asyncio.sleep(delay_seconds)
+
+        except Exception as e:
+            stats["fail"] += 1
+            stats["errors"].append(f"{inn}: {e}")
+            print(f"FAIL: {inn}: {e}")
+            if session.in_transaction():
+                await session.rollback()
+
+    return stats
